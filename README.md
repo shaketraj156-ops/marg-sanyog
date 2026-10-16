@@ -1,13 +1,14 @@
-# AI-Powered Automatic Block Planning (backend)
+# AI-Powered Automatic Block Planning
 
 Smart India Hackathon 2026, Problem Statement 26027.
 
 Railway maintenance needs "blocks": a section of line is closed so engineers can work on it.
 Engineering, Traction Distribution (TrD) and Signal and Telecom (S&T) normally ask for blocks
-separately, so the same section is closed again and again. This backend takes their requests,
+separately, so the same section is closed again and again. This system takes their requests,
 plans them together (several departments share one closure window, scheduled when few trains
 run), and shows a human planner the result with reasons, so the planner can review, try
-changes, approve and publish.
+changes, approve and publish. It has a Python backend (`backend/`, FastAPI and an OR-Tools
+optimizer) and a React web interface (`frontend/`).
 
 > **All data in this project is synthetic (simulation).** The timetable, traffic, requests and
 > every number below come from invented data and stated assumptions. No real railway data was
@@ -27,13 +28,15 @@ The design is in [`docs/Backend_Specification.md`](docs/Backend_Specification.md
 | Synthetic timetable generator, traffic profile, CSV/JSON upload, traffic-aware cost | Built and tested |
 | Explanations, conflicts, what-if, override (child plan), approve, publish, published calendar | Built and tested |
 | `scripts/demo.py` end-to-end demo | Run, and covered by a smoke test |
-| End-to-end check through the real HTTP API (`backend/scripts/e2e_check.py`): real server process, real background solver, all roles, the whole workflow and the failure paths | Run: 17/17 checks; also part of the test suite |
+| End-to-end check through the real HTTP API (`backend/scripts/e2e_check.py`): real server process, real background solver, all roles, the whole workflow and the failure paths | Run: 18/18 checks; also part of the test suite |
 | Machine learning (light): synthetic data, delay and overrun models vs baselines, time-based split, registry, `/ml/models`, `/ml/train`, delay-model cost with fallback | Built and tested (leakage and fallback tests; checked over real HTTP) |
 | Hardening: login lockout and rate limit, `/ready`, JSON request logs with request ids, benchmark script | Built and tested (see [Hardening](#hardening-light) and [Benchmark](#benchmark)) |
 | Solver isolation: each solve runs in a child process, so a native crash fails one run instead of killing the server | Built and tested (crash, exception, hang, cancel) |
-| Web interface (`frontend/`): login, dashboard, requests, plans, plan detail with Gantt, calendar | Built; 97 unit and component tests; 19-step real-browser check run in Chrome |
+| Web interface (`frontend/`): login, dashboard, requests, plans, plan detail with Gantt, calendar | Built; 101 unit and component tests; 19-step real-browser check run in Chrome (zero console errors) |
 
-Everything above was run on **SQLite**. See [Limitations](#limitations) for what was not run.
+**Test counts at the last full run:** backend 601 tests, frontend 101 tests, end-to-end check 18/18
+over real HTTP, browser check 19/19. Everything above was run on **SQLite**. See
+[Limitations](#limitations) for what was not run and [Known issues](#known-issues).
 
 ## Setup on Windows (no Docker, no Redis)
 
@@ -53,6 +56,15 @@ Remove-Item Env:SEED_PASSWORD
 
 Open <http://127.0.0.1:8000/docs>. If you pulled new code, run `alembic upgrade head` again to
 add new tables, and `pip install -e ".[dev]"` again to add new packages.
+
+For the web interface, install its packages once (needs Node 20 or newer):
+
+```powershell
+cd ..\frontend
+npm install
+```
+
+After that, `start.ps1` (below) starts everything.
 
 Demo users (all use the password you chose for `SEED_PASSWORD`):
 
@@ -84,7 +96,35 @@ powershell -ExecutionPolicy Bypass -File scripts\run-smoke.ps1
 
 ## Demo
 
-### One command
+### Present it in the web interface (recommended)
+
+1. Start everything: `powershell -ExecutionPolicy Bypass -File .\start.ps1` (two windows open).
+2. First time only, put demo data in the application's database (16 synthetic requests with two
+   ordering rules, simulated traffic for 19 to 25 October 2026):
+   `cd backend` then `.\.venv\Scripts\python -m scripts.load_demo_data`.
+3. Open <http://localhost:5173> and **log in as `planner@blockplanner.test`**.
+4. **Dashboard:** empty at first ("No finished plan yet").
+5. **Requests:** show the 16 submitted requests, filter by section or status, open "New request"
+   and try a duration of 5 to see the server's rule shown under the field. Open a request's
+   dependency editor.
+6. **Plans:** the date is already the next Monday; for the demo data set it to **2026-10-19**.
+   Set the time limit to 20 to 30 seconds and press **Run plan**. The page shows progress every 2
+   seconds and offers the plan when it finishes.
+7. **Plan detail, Schedule:** the Gantt shows one row per section, bars coloured by department;
+   hover a bar to see the requests that share it.
+8. **Compare:** independent planning against the integrated plan (chart, table, and both
+   timelines). **Conflicts** and **Explanations** show why, with the numbers behind each reason.
+9. **What-if:** pick a request and a new start, press "Try this move" (nothing is saved), and read
+   the difference. **Override...** applies moves and creates a child plan.
+10. **Approve**, then **Publish**, each with a confirmation. Open **Calendar** for the published
+    closures by section and day, and **Dashboard** for the headline numbers.
+11. **Roles:** log out and log in as `viewer@blockplanner.test` (read-only) or `engg@blockplanner.test`
+    (can edit only Engineering's requests) to show the buttons that disappear.
+
+Optional: log in as `admin@blockplanner.test` and call `POST /api/v1/ml/train` in the API
+documentation to train the delay model; the next plan then reports it used predicted delay.
+
+### One command in the terminal
 
 ```powershell
 cd backend
@@ -178,6 +218,15 @@ cd backend
 `tests/e2e/test_live_flow.py` runs `scripts/e2e_check.py`, which starts its own throwaway server and
 plays the whole story over real HTTP (about 40 seconds). You can run it alone:
 `.\.venv\Scripts\python -m scripts.e2e_check`.
+
+The web interface has its own checks:
+
+```powershell
+cd frontend
+npm test                                                        # 101 unit and component tests
+npm run build                                                   # type-check and production build
+powershell -ExecutionPolicy Bypass -File scripts\run-smoke.ps1  # real browser (Chrome), 19 steps
+```
 
 Tests use in-memory SQLite. To run the same suite on Postgres, point `TEST_DATABASE_URL` at a
 **throwaway** database (the tests create and drop tables in it). That path has not been run.
@@ -342,6 +391,22 @@ Honest list of what is not done or not verified:
   is needed, as the spec says. The delay model sees the average train weight instead of the full
   category mix, because the traffic profile does not store categories.
 
+- **Web interface:** checked in Chrome only (not Firefox, Safari or a phone). It is built for a laptop
+  or projector. There are no translations, and it polls every 2 seconds instead of streaming
+  progress. The Gantt is a plain SVG drawing, not a drag-and-drop editor: moves are made through
+  the What-if and Override forms.
+
+## Known issues
+
+- `tests/db/test_demo.py` (the demo script as a subprocess) failed once while the machine was heavily
+  loaded and passed on every rerun; the cause was not found. It now prints the full output when it
+  fails.
+- A plan of about 200 requests with a short time limit returns mostly the valid starting plan (see
+  [Benchmark](#benchmark)); this is a known limit of the single model, not a bug.
+- Nothing has been run on Postgres or in Docker (see Limitations).
+- The shell tool used during development rewrote some backslashes; `CLAUDE.md` records how to
+  avoid it. All Windows paths in this README were checked after writing.
+
 ## Future work
 
 - ML: use the overrun model's buffered durations in the plan, retrain from recorded block actuals
@@ -354,3 +419,7 @@ Honest list of what is not done or not verified:
 - Resource calendars, power blocks across feeding sections, block actuals feeding the models.
 - Adapters for the real Traffic Management System and Traction Distribution Management System.
 - Notifications, single sign-on, multi-division rolling-horizon planning.
+
+---
+
+All results, numbers and screens in this document come from simulated data.

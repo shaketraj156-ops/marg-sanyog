@@ -72,17 +72,25 @@ with `encoding="utf-8"` (Windows defaults to cp1252 and corrupts non-ASCII text)
 
 ## Status
 
-| Milestone | State |
-| --- | --- |
-| M0 skeleton, M1 auth/reference | done, committed |
-| M2 requests, M3 planner, M4 traffic, M5 review workflow | done, committed |
-| Demo script, README, CLAUDE.md | done |
-| F1 frontend (`frontend/`) | done: 97 Vitest tests, build OK, 19/19 browser steps (`frontend/scripts/run-smoke.ps1`) |
-| F2 end-to-end check (`backend/scripts/e2e_check.py`) | done: 17/17 over real HTTP; also `tests/e2e`; 457 backend tests |
-| M7 hardening (login lockout, `/ready`, JSON logs, `scripts/benchmark.py`, greedy warm start) | done: 527 backend tests; benchmark results in the README |
-| M6 ML (`app/ml/`: data, train, registry, predict; `/ml/models`, `/ml/train`) | done: 72 ML tests, 599 backend tests, e2e 18/18 |
+All planned stages are done and committed. Nothing is in progress.
 
-Last full test run before this file was written: 437 passed (backend).
+| Stage | State |
+| --- | --- |
+| M0 skeleton, M1 auth/reference | done |
+| M2 requests, M3 planner, M4 traffic, M5 review workflow | done |
+| Demo script (`scripts/demo.py`), `scripts/load_demo_data.py`, README, CLAUDE.md | done |
+| F1 frontend (`frontend/`) | done: 101 Vitest tests, build OK, 19/19 browser steps (`frontend/scripts/run-smoke.ps1`) |
+| F2 end-to-end check (`backend/scripts/e2e_check.py`) | done: 18/18 over real HTTP; also `tests/e2e` |
+| M7 hardening (login lockout, `/ready`, JSON logs, `scripts/benchmark.py`, greedy warm start) | done; benchmark in the README |
+| M6 ML (`app/ml/`; `/ml/models`, `/ml/train`) | done |
+
+Last full runs: backend 601 passed, frontend 101 passed, e2e 18/18, browser 19/19.
+
+Start everything with `.\start.ps1` (repo root). Presentation steps are in the README ("Demo").
+
+Not done (see the README's Limitations and Future work): Postgres/Docker never run; no solver
+decomposition for 200+ requests; the overrun model is trained but not used by the planner; no
+resources, power blocks, block actuals, event streaming or plan cancellation.
 
 ## Gotchas learned the hard way
 
