@@ -88,7 +88,7 @@ Last full test run before this file was written: 437 passed (backend).
 - **Never set `solver.parameters.repair_hint`**: with several workers OR-Tools aborts the whole
   process on tiny models. Solves run in a child process by default (`app/planner/isolated.py`,
   chosen in `app/services/solving.py`); tests set `SOLVER_ISOLATION=0`.
-- The Bash tool rewrites backslashes in heredocs (`scriptsun` became a carriage return). Use the
+- The Bash tool rewrites backslashes in heredocs (`scripts\run` became a carriage return). Use the
   Write/Edit tools for anything containing Windows paths, or build the text with `chr(92)`.
 - Python edit scripts: always `read_text(encoding="utf-8")` and `write_text(..., encoding="utf-8")`.
 - Chrome for the browser smoke test is at `C:\Program Files (x86)\Google\Chrome\Application\chrome.exe`.
