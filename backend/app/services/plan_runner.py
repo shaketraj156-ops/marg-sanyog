@@ -15,7 +15,7 @@ from app.planner.baseline import baseline_plan
 from app.planner.checker import check_plan
 from app.planner.metrics import compute_metrics
 from app.planner.model import solve
-from app.services import plan_service
+from app.services import explain, plan_service
 
 log = logging.getLogger(__name__)
 _solve_lock = threading.Lock()
@@ -104,7 +104,12 @@ def _execute(db: Session, run_id: int) -> None:
 
 
 def _after_save(db, run, snapshot, plan, baseline) -> None:
-    """Hook for work that belongs in the same transaction as the saved plan."""
+    """Work that belongs in the same transaction as the saved plan."""
+    db.flush()
+    drafts = explain.explain(
+        snapshot, plan, baseline, plan_service.horizon_start_date(run)
+    )
+    explain.save(db, run, drafts)
 
 
 def start_in_background(run_id: int) -> None:

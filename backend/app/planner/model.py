@@ -100,7 +100,6 @@ def solve(
         for d in sorted({d for (i, d) in x if i in set(ids)}):
             members = [i for i in ids if (i, d) in x]
             used = model.NewBoolVar(f"closure_{section}_{d}")
-            closure[section, d] = used
             window_start = model.NewIntVar(0, per_day, f"bs_{section}_{d}")
             window_end = model.NewIntVar(0, per_day, f"be_{section}_{d}")
             for i in members:
@@ -109,17 +108,22 @@ def solve(
                 model.Add(offset[i] + dur[i] <= window_end).OnlyEnforceIf(x[i, d])
             model.AddBoolOr([x[i, d] for i in members]).OnlyEnforceIf(used)
             model.Add(window_end - window_start <= snapshot.max_block_slots).OnlyEnforceIf(used)
+            # Redundant but valuable: they tighten the lower bound so optimality can be proved.
+            model.Add(window_end >= window_start)
             model.Add(window_start == 0).OnlyEnforceIf(used.Not())
             model.Add(window_end == 0).OnlyEnforceIf(used.Not())
             terms.append(snapshot.weight("block") * used)
             terms.append(window_end - window_start)
             cumulative = prefix_sums(costs.cost(section, d))
+            at_start = at_end = None
             if cumulative[-1] > 0:
                 at_start = model.NewIntVar(0, cumulative[-1], f"cs_{section}_{d}")
                 at_end = model.NewIntVar(0, cumulative[-1], f"ce_{section}_{d}")
                 model.AddElement(window_start, cumulative, at_start)
                 model.AddElement(window_end, cumulative, at_end)
+                model.Add(at_end >= at_start)  # cumulative traffic never decreases
                 terms.append(snapshot.weight("traffic") * (at_end - at_start))
+            closure[section, d] = (used, window_start, window_end, at_start, at_end, cumulative)
 
     # People: a department's work on one section cannot overlap; crews are limited.
     for ids in by_dept_section.values():
@@ -170,10 +174,20 @@ def solve(
             for (j, d), var in x.items():
                 if j == i:
                     model.AddHint(var, int(d == placement.day))
+        hinted = {(b.section, b.day): b for b in span_blocks(hints.placements.values())}
+        for key, (used, w_start, w_end, at_start, at_end, cumulative) in closure.items():
+            block = hinted.get(key)
+            model.AddHint(used, int(block is not None))
+            model.AddHint(w_start, block.start if block else 0)
+            model.AddHint(w_end, block.end if block else 0)
+            if at_start is not None:
+                model.AddHint(at_start, cumulative[block.start] if block else 0)
+                model.AddHint(at_end, cumulative[block.end] if block else 0)
 
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = time_limit_s
     solver.parameters.random_seed = seed
+    solver.parameters.repair_hint = True  # a hint that is almost feasible still gives a start
     solver.parameters.num_workers = workers or default_workers()
     status = solver.Solve(model, StopOnFlag(should_stop))
     name = solver.StatusName(status)

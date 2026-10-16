@@ -323,17 +323,28 @@ def test_uploads_and_rebuilds_are_audited(client, world, db):
 # ---------- the planner uses the traffic ----------
 
 
-def test_the_planner_moves_work_into_the_quiet_hours(client, world, submit_request, inline_planner):
+def test_the_planner_moves_work_into_the_quiet_hours(
+    client, world, submit_request, inline_planner, monkeypatch
+):
+    from app.config import get_settings
+
+    # Asserting the optimal window needs a proved optimum, which one worker is too slow to reach.
+    monkeypatch.setattr(get_settings(), "solver_workers", 8)
     client.post(f"{URL}/synthetic", json={"seed": 1}, headers=world.h("planner"))
     rebuild(client, world, days=7)
     for who, section in [("engg", "A-B"), ("trd", "B-C"), ("snt", "C-D")]:
         submit_request(who, section_code=section, duration_minutes=120, earliest_date="2026-10-19", deadline_date="2026-10-23")
-    created = client.post("/api/v1/plans", json=HORIZON, headers=world.h("planner")).json()
+    created = client.post(
+        "/api/v1/plans", json={**HORIZON, "time_limit_s": 30}, headers=world.h("planner")
+    ).json()
     plan = client.get(f"/api/v1/plans/{created['id']}", headers=world.h("viewer")).json()
     assert plan["status"] == "succeeded"
+    assert plan["solver_status"] == "OPTIMAL"
     baseline, integrated = plan["metrics"]["baseline"], plan["metrics"]["integrated"]
-    assert integrated["trains_affected"] < baseline["trains_affected"]
+    # The planner minimises the weighted traffic cost, so that must drop strictly; the plain
+    # train count can tie when a cheaper window happens to hold equally many (lighter) trains.
     assert integrated["traffic_cost"] < baseline["traffic_cost"]
+    assert integrated["trains_affected"] <= baseline["trains_affected"]
     assert baseline["trains_affected"] > 0
 
     schedule = client.get(f"/api/v1/plans/{created['id']}/schedule", headers=world.h("viewer")).json()
