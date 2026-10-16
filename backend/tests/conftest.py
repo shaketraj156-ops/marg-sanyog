@@ -10,6 +10,7 @@ import os
 # Must be set before app modules read settings.
 os.environ["JWT_SECRET"] = "test-only-secret-key-that-is-long-enough-0123456789"
 os.environ["SOLVER_WORKERS"] = "1"  # one worker keeps solver tests repeatable
+os.environ["SOLVER_ISOLATION"] = "0"  # in-process solves are much faster; test_isolated covers the child process
 
 import pytest
 from fastapi.testclient import TestClient

@@ -14,8 +14,8 @@ from app.db.session import get_session
 from app.planner.baseline import baseline_plan
 from app.planner.checker import check_plan
 from app.planner.metrics import compute_metrics
-from app.planner.model import solve
 from app.services import explain, plan_service
+from app.services.solving import solve
 
 log = logging.getLogger(__name__)
 _solve_lock = threading.Lock()
@@ -99,6 +99,13 @@ def _execute(db: Session, run_id: int) -> None:
         run.error = "No plan satisfies the hard constraints"
         run.finished_at = datetime.now(UTC)
         db.commit()
+    elif result.status == "CRASHED":
+        log.error("the solver crashed on plan run %s: %s", run_id, result.message)
+        _fail(
+            db,
+            run_id,
+            f"The solver stopped unexpectedly ({result.message}). The server is unaffected; run the plan again.",
+        )
     else:
         _fail(db, run_id, f"Solver ended with {result.status}: no solution within the time limit")
 

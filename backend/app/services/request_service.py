@@ -234,6 +234,10 @@ def update_request(
 
     changes = body.model_dump(exclude_unset=True, exclude={"version"})
     section = _section(db, changes.pop("section_code")) if "section_code" in changes else None
+    # Fields sent with their current value are not changes: no new version, no audit row.
+    changes = {field: value for field, value in changes.items() if getattr(request, field) != value}
+    if section is not None and section.id == request.section_id:
+        section = None
     earliest = changes.get("earliest_date", request.earliest_date)
     deadline = changes.get("deadline_date", request.deadline_date)
     if deadline < earliest:

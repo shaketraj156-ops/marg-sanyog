@@ -27,6 +27,8 @@ The design is in [`docs/Backend_Specification.md`](docs/Backend_Specification.md
 | Synthetic timetable generator, traffic profile, CSV/JSON upload, traffic-aware cost | Built and tested |
 | Explanations, conflicts, what-if, override (child plan), approve, publish, published calendar | Built and tested |
 | `scripts/demo.py` end-to-end demo | Run, and covered by a smoke test |
+| End-to-end check through the real HTTP API (`backend/scripts/e2e_check.py`): real server process, real background solver, all roles, the whole workflow and the failure paths | Run: 17/17 checks; also part of the test suite |
+| Solver isolation: each solve runs in a child process, so a native crash fails one run instead of killing the server | Built and tested (crash, exception, hang, cancel) |
 | Web interface (`frontend/`): login, dashboard, requests, plans, plan detail with Gantt, calendar | Built; 97 unit and component tests; 19-step real-browser check run in Chrome |
 
 Everything above was run on **SQLite**. See [Limitations](#limitations) for what was not run.
@@ -169,6 +171,10 @@ cd backend
 .\.venv\Scripts\python -m ruff check .
 ```
 
+`tests/e2e/test_live_flow.py` runs `scripts/e2e_check.py`, which starts its own throwaway server and
+plays the whole story over real HTTP (about 40 seconds). You can run it alone:
+`.\.venv\Scripts\python -m scripts.e2e_check`.
+
 Tests use in-memory SQLite. To run the same suite on Postgres, point `TEST_DATABASE_URL` at a
 **throwaway** database (the tests create and drop tables in it). That path has not been run.
 
@@ -193,6 +199,11 @@ Tests use in-memory SQLite. To run the same suite on Postgres, point `TEST_DATAB
 - **The overlap rule for published blocks is enforced in code** (publish is all or nothing).
   Migration `0004` also adds a Postgres exclusion constraint as a backstop.
 - **Publishing does not supersede earlier published runs.** Overlaps are refused instead.
+- **Every solve runs in a child process** (`SOLVER_ISOLATION=1`, the default). OR-Tools is native
+  code and once aborted the whole process (found by the end-to-end check, caused by a
+  `repair_hint` setting that has been removed). With isolation a crash fails that one run with a
+  clear message and the server keeps working. It costs about a second per solve; the unit tests
+  switch it off for speed and have their own tests for it.
 - **One solve at a time per process** (the solver uses the CPU cores); other runs wait as `queued`.
   A run left `queued` or `running` when the server stops is marked `failed` on the next start.
 - **Slot size is fixed to the configured `SLOT_MINUTES` (30)** so the traffic profile and plans

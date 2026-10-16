@@ -78,9 +78,20 @@ with `encoding="utf-8"` (Windows defaults to cp1252 and corrupts non-ASCII text)
 | M2 requests, M3 planner, M4 traffic, M5 review workflow | done, committed |
 | Demo script, README, CLAUDE.md | done |
 | F1 frontend (`frontend/`) | done: 97 Vitest tests, build OK, 19/19 browser steps (`frontend/scripts/run-smoke.ps1`) |
-| F2 end-to-end check, M7 hardening, M6 ML | planned, in this order |
+| F2 end-to-end check (`backend/scripts/e2e_check.py`) | done: 17/17 over real HTTP; also `tests/e2e`; 457 backend tests |
+| M7 hardening, M6 ML | planned, in this order |
 
 Last full test run before this file was written: 437 passed (backend).
+
+## Gotchas learned the hard way
+
+- **Never set `solver.parameters.repair_hint`**: with several workers OR-Tools aborts the whole
+  process on tiny models. Solves run in a child process by default (`app/planner/isolated.py`,
+  chosen in `app/services/solving.py`); tests set `SOLVER_ISOLATION=0`.
+- The Bash tool rewrites backslashes in heredocs (`scriptsun` became a carriage return). Use the
+  Write/Edit tools for anything containing Windows paths, or build the text with `chr(92)`.
+- Python edit scripts: always `read_text(encoding="utf-8")` and `write_text(..., encoding="utf-8")`.
+- Chrome for the browser smoke test is at `C:\Program Files (x86)\Google\Chrome\Application\chrome.exe`.
 
 ## Known issues
 

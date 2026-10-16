@@ -333,6 +333,29 @@ def test_whatif_cannot_move_a_request_the_plan_deferred(client, world, submit_re
     assert response.json()["title"] == "move_outside_window"
 
 
+def test_a_solver_crash_during_a_whatif_is_a_clear_error_and_changes_nothing(client, world, pair, db, monkeypatch):
+    from app.planner.model import SolveResult
+    from app.services import review_service
+
+    plan_id = run_plan(client, world)
+    before = counts(db)
+    monkeypatch.setattr(review_service, "solve", lambda *a, **k: SolveResult("CRASHED", message="exit code 3"))
+    response = move(
+        client, world, f"{PLANS}/{plan_id}/whatif", {"request_id": pair[0]["id"], "start": "2026-10-19T08:00:00+05:30"}
+    )
+    assert response.status_code == 503
+    assert response.json()["title"] == "solver_crashed"
+    override = move(
+        client,
+        world,
+        f"{PLANS}/{plan_id}/overrides",
+        {"moves": [{"request_id": pair[0]["id"], "start": "2026-10-19T08:00:00+05:30"}]},
+    )
+    assert override.status_code == 503
+    db.expire_all()
+    assert counts(db) == before
+
+
 def test_whatif_roles_and_states(client, world, pair, monkeypatch):
     plan_id = run_plan(client, world)
     body = {"request_id": pair[0]["id"], "start": "2026-10-19T08:00:00+05:30"}

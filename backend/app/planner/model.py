@@ -20,6 +20,7 @@ class SolveResult:
     objective: float | None = None
     best_bound: float | None = None
     wall_time_s: float = 0.0
+    message: str | None = None  # why a solve ended without an answer (crash, time-out)
 
     @property
     def gap(self) -> float | None:
@@ -187,7 +188,8 @@ def solve(
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = time_limit_s
     solver.parameters.random_seed = seed
-    solver.parameters.repair_hint = True  # a hint that is almost feasible still gives a start
+    # Do not set repair_hint: with several workers it aborts the whole process on tiny models
+    # (OR-Tools 9.15: "Check failed: heuristics.fixed_search != nullptr"). The hints are complete.
     solver.parameters.num_workers = workers or default_workers()
     status = solver.Solve(model, StopOnFlag(should_stop))
     name = solver.StatusName(status)

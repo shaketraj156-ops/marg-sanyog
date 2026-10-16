@@ -341,6 +341,22 @@ def test_no_solution_fails_the_run(client, world, monkeypatch, create_plan, db, 
     assert run.status == "failed" and status in run.error
 
 
+def test_a_solver_crash_fails_the_run_and_the_server_keeps_working(
+    client, world, monkeypatch, create_plan, db, submit_request
+):
+    submit_request("engg")
+    real_solve = plan_runner.solve
+    monkeypatch.setattr(
+        plan_runner, "solve", lambda *a, **k: SolveResult("CRASHED", message="the solver process ended with exit code 3")
+    )
+    first = _status(db, create_plan()["id"])
+    assert first.status == "failed"
+    assert "stopped unexpectedly" in first.error and "exit code 3" in first.error
+    assert db.query(Block).count() == 0
+    monkeypatch.setattr(plan_runner, "solve", real_solve)  # the next run works as normal
+    assert _status(db, create_plan()["id"]).status == "succeeded"
+
+
 def test_schedule_of_an_unfinished_run_is_409(client, world, monkeypatch, db):
     monkeypatch.setattr(plan_runner, "submit", lambda run_id: None)  # never runs
     plan_id = client.post(URL, json=HORIZON, headers=world.h("planner")).json()["id"]

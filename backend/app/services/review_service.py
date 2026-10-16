@@ -22,7 +22,6 @@ from app.db.models import (
 )
 from app.planner.checker import check_plan
 from app.planner.metrics import compute_metrics
-from app.planner.model import solve
 from app.planner.plan import Placement, Plan
 from app.planner.snapshot import Snapshot
 from app.schemas.review import MoveIn, OverrideIn, WhatIfIn
@@ -30,6 +29,7 @@ from app.services import audit, explain, plan_service
 from app.services import request_service as requests_svc
 from app.services.explain import fmt_day, label
 from app.services.request_service import ValidationProblem
+from app.services.solving import solve
 
 log = logging.getLogger(__name__)
 METRIC_KEYS = (
@@ -146,6 +146,11 @@ def _resolve(snapshot: Snapshot, plan: Plan, fixed: dict, time_limit_s: int, see
         seed=seed,
         workers=_workers(),
     )
+    if result.status == "CRASHED":
+        log.error("the solver crashed during a re-solve: %s", result.message)
+        raise ProblemError(
+            503, "solver_crashed", "The solver stopped unexpectedly. Nothing was changed; try again."
+        )
     if result.status in ("OPTIMAL", "FEASIBLE"):
         violations = check_plan(snapshot, result.plan)
         if violations:

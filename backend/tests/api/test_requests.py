@@ -351,6 +351,18 @@ def test_empty_patch_changes_nothing(client, world, create_request):
     assert response.json()["version"] == 1
 
 
+def test_patch_with_the_current_values_changes_nothing(client, world, create_request, db):
+    created = create_request("engg")
+    response = client.patch(
+        f"{URL}/{created['id']}",
+        json={"version": 1, "priority": created["priority"], "section_code": created["section_code"]},
+        headers=world.h("engg"),
+    )
+    assert response.status_code == 200
+    assert response.json()["version"] == 1  # nothing changed, so no new version
+    assert [row.action for row in _audit(db)] == ["request.create"]  # and nothing was audited
+
+
 def test_patch_can_not_null_required_fields(client, world, create_request):
     created = create_request("engg")
     response = client.patch(
