@@ -11,6 +11,9 @@ from app.services import plan_service
 
 settings = get_settings()
 
+# The Vite dev server for the frontend, always allowed in addition to CORS_ORIGINS.
+DEV_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]
+
 log = logging.getLogger(__name__)
 
 
@@ -34,7 +37,7 @@ install_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=sorted({*settings.cors_origins, *DEV_ORIGINS}),
     allow_methods=["*"],
     allow_headers=["*"],
 )
