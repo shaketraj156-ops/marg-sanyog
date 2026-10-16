@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scroll-Driven Track Motion</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- GSAP & Plugins -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/MotionPathPlugin.min.js"></script>
+</head>
+<body class="bg-[#F8FAFC] text-slate-800 antialiased selection:bg-cyan-100 overflow-x-hidden">
+
+  <!-- Fixed Navigation Bar -->
+  <header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-8 py-5 backdrop-blur-md bg-white/70 border-b border-slate-200/60">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-lg bg-cyan-600 flex items-center justify-center text-white font-bold text-sm">
+        //
+      </div>
+      <span class="font-bold tracking-tight text-slate-900 text-lg">AEROVECT</span>
+    </div>
+    <nav class="hidden md:flex gap-8 text-sm font-medium text-slate-500">
+      <a href="#" class="text-cyan-600">Overview</a>
+      <a href="#" class="hover:text-slate-900 transition-colors">Corridors</a>
+      <a href="#" class="hover:text-slate-900 transition-colors">Propulsion</a>
+      <a href="#" class="hover:text-slate-900 transition-colors">Schedules</a>
+    </nav>
+    <button class="px-5 py-2 text-xs font-semibold uppercase tracking-wider bg-slate-900 text-white rounded-full hover:bg-slate-700 transition shadow-sm">
+      Reserve Seat
+    </button>
+  </header>
+
+  <!-- Pinned Interactive Section -->
+  <section id="hero-pin" class="relative w-full h-screen overflow-hidden flex items-center">
+    
+    <!-- Stationary Center-Left Hero Content (Never moves) -->
+    <div class="relative z-30 max-w-xl pl-10 md:pl-24 space-y-6 select-none pointer-events-auto">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-cyan-500/20 bg-cyan-50 text-xs font-semibold uppercase tracking-wider text-cyan-700">
+        <span class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
+        Zero-Emission High-Speed Transit
+      </div>
+
+      <h1 class="text-4xl sm:text-6xl font-black tracking-tight text-slate-900 leading-[1.1]">
+        Speed Through <br />
+        <span class="bg-gradient-to-r from-cyan-600 via-sky-500 to-indigo-600 bg-clip-text text-transparent">
+          The Curve.
+        </span>
+      </h1>
+
+      <p class="text-slate-500 text-base sm:text-lg leading-relaxed max-w-lg">
+        Continuous magnetic guideway propulsion with dynamic curve compensation. Scroll to drive the line.
+      </p>
+
+      <div class="flex items-center gap-3 pt-2">
+        <button class="px-6 py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 font-semibold text-white transition-all shadow-md shadow-cyan-600/20">
+          Explore Corridors
+        </button>
+        <button class="px-6 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold text-slate-700 transition">
+          View Timetable
+        </button>
+      </div>
+    </div>
+
+    <!-- Curving Track & Moving Train Layer -->
+    <svg class="absolute inset-0 w-full h-full pointer-events-none z-20" viewBox="0 0 1440 900" fill="none">
+      
+      <!-- Base Concrete Bed -->
+      <path 
+        id="rail-guideway"
+        d="M 1480,-30 C 1220,180 1350,560 1150,720 C 950,880 400,840 -60,820" 
+        stroke="#E2E8F0" 
+        stroke-width="18" 
+        stroke-linecap="round"
+      />
+
+      <!-- Moving Track Ties / Sleepers (Dashed stroke that moves on scroll) -->
+      <path 
+        id="moving-ties"
+        d="M 1480,-30 C 1220,180 1350,560 1150,720 C 950,880 400,840 -60,820" 
+        stroke="#94A3B8" 
+        stroke-width="14" 
+        stroke-dasharray="3 14"
+        stroke-linecap="butt"
+      />
+
+      <!-- Glowing Neon Pulse Rail (Fast moving beam) -->
+      <path 
+        id="moving-glow"
+        d="M 1480,-30 C 1220,180 1350,560 1150,720 C 950,880 400,840 -60,820" 
+        stroke="#06B6D4" 
+        stroke-width="3" 
+        stroke-dasharray="40 180"
+        stroke-linecap="round"
+        class="opacity-80"
+      />
+
+      <!-- High-Speed Train Group -->
+      <g id="train">
+        <!-- Train Drop Shadow -->
+        <ellipse cx="0" cy="22" rx="70" ry="12" fill="#0F172A" opacity="0.15" />
+
+        <!-- Main Body -->
+        <path d="M -70,-16 C -40,-16 40,-14 65,-8 C 75,-4 75,4 65,8 C 40,14 -40,16 -70,16 Z" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
+        
+        <!-- Aerodynamic Cockpit Glass -->
+        <path d="M 30,-8 C 45,-8 60,-4 65,0 C 60,4 45,8 30,8 Z" fill="#0284C7" />
+        
+        <!-- Body Accent Stripe -->
+        <line x1="-65" y1="0" x2="35" y2="0" stroke="#06B6D4" stroke-width="2" />
+        
+        <!-- Headlight Beam -->
+        <polygon points="68,0 160,-25 160,25" fill="url(#headlight-beam)" opacity="0.4"/>
+      </g>
+
+      <defs>
+        <linearGradient id="headlight-beam" x1="0%" y1="50%" x2="100%" y2="50%">
+          <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.8"/>
+          <stop offset="100%" stop-color="#38BDF8" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+    </svg>
+
+    <!-- Scroll Indicator -->
+    <div class="absolute bottom-8 right-12 z-30 flex items-center gap-3 text-xs uppercase tracking-widest text-slate-400 font-medium">
+      <span>Scroll to propel</span>
+      <div class="w-6 h-10 rounded-full border-2 border-slate-300 flex items-start justify-center p-1">
+        <div class="w-1.5 h-2 bg-slate-500 rounded-full animate-bounce"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Next Section to transition to after full scroll -->
+  <section class="h-screen bg-white flex items-center justify-center border-t border-slate-200">
+    <div class="text-center space-y-3">
+      <h2 class="text-3xl font-bold text-slate-900">Arrived at Terminal</h2>
+      <p class="text-slate-500">The rest of your site content flows naturally below.</p>
+    </div>
+  </section>
+
+  <script>
+    gsap.registerPlugin(ScrollTrigger, MotionPathPlugin);
+
+    // Timeline pinned for 2500px worth of scroll distance
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: "#hero-pin",
+        start: "top top",
+        end: "+=2500",      // Scroll depth required to complete the movement
+        scrub: 1.2,        // Smooth damping/physics
+        pin: true,         // Freezes the section in place
+        anticipatePin: 1
+      }
+    });
+
+    // 1. Move the train along the SVG path
+    tl.to("#train", {
+      motionPath: {
+        path: "#rail-guideway",
+        align: "#rail-guideway",
+        alignOrigin: [0.5, 0.5],
+        autoRotate: true
+      },
+      scale: 1.35,         // Expands slightly as it heads toward foreground
+      ease: "none"
+    }, 0);
+
+    // 2. Animate the track ties (strokes) backward so the rails feel in continuous motion
+    tl.to("#moving-ties", {
+      strokeDashoffset: -2000,
+      ease: "none"
+    }, 0);
+
+    // 3. Move the glowing neon beam ahead along the tracks
+    tl.to("#moving-glow", {
+      strokeDashoffset: -2500,
+      ease: "none"
+    }, 0);
+  </script>
+</body>
+</html>
