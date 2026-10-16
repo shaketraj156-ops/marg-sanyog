@@ -6,3 +6,6 @@ __pycache__/
 .ruff_cache/
 *.egg-info/
 *.db
+
+# trained model files
+backend/models/

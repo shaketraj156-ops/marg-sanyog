@@ -28,6 +28,7 @@ The design is in [`docs/Backend_Specification.md`](docs/Backend_Specification.md
 | Explanations, conflicts, what-if, override (child plan), approve, publish, published calendar | Built and tested |
 | `scripts/demo.py` end-to-end demo | Run, and covered by a smoke test |
 | End-to-end check through the real HTTP API (`backend/scripts/e2e_check.py`): real server process, real background solver, all roles, the whole workflow and the failure paths | Run: 17/17 checks; also part of the test suite |
+| Machine learning (light): synthetic data, delay and overrun models vs baselines, time-based split, registry, `/ml/models`, `/ml/train`, delay-model cost with fallback | Built and tested (leakage and fallback tests; checked over real HTTP) |
 | Hardening: login lockout and rate limit, `/ready`, JSON request logs with request ids, benchmark script | Built and tested (see [Hardening](#hardening-light) and [Benchmark](#benchmark)) |
 | Solver isolation: each solve runs in a child process, so a native crash fails one run instead of killing the server | Built and tested (crash, exception, hang, cancel) |
 | Web interface (`frontend/`): login, dashboard, requests, plans, plan detail with Gantt, calendar | Built; 97 unit and component tests; 19-step real-browser check run in Chrome |
@@ -142,6 +143,8 @@ Roles: **A** admin, **P** planner, **D** department user (own department), **V**
 | | `GET /plans`, `GET /plans/{id}`, `/schedule`, `/baseline`, `/conflicts`, `/explanations` | all |
 | Review | `POST /plans/{id}/whatif`, `/overrides`, `/approve`, `/publish` | P, A |
 | Calendar | `GET /blocks` (published blocks) | all |
+| ML | `GET /ml/models` | P, A |
+| | `POST /ml/train` (trains on synthetic data, registers the result) | A |
 
 Interactive documentation: <http://127.0.0.1:8000/docs>.
 
@@ -233,6 +236,42 @@ What this shows, honestly:
   the independent checker), the solver improves it, and if the time limit ends before the solver
   has anything better, that valid starting plan is used and the run says so.
 
+## Machine learning (light)
+
+Two small models from spec section 11, trained with scikit-learn on **synthetic data generated
+here** (an invented process the models have to learn; nothing about real railways):
+
+| Model | Predicts | Baseline it must beat | Measured on the last 20% of the period |
+| --- | --- | --- | --- |
+| Delay | train-minutes lost by a closure window | delay proportional to the raw train count in the window | error (MAE) 3.9 against 9.6 minutes, 60% lower |
+| Overrun | 75th percentile of actual / planned duration | the 75th percentile per kind of work | pinball loss 0.048 against 0.056, 14% lower; 73.6% of outcomes fell under the prediction (target 75%) |
+
+(120 days of synthetic history, seed 1; each model trains in about a second.)
+
+- **Time-based split.** Both models are trained on the first 80% of the days and tested on the last
+  20%, never on a random split, so the test period is entirely later than the training period.
+  Tests prove there is no leakage: a model trained on shuffled targets cannot beat the baseline, and
+  scrambling the targets of the test period does not change the trained model at all.
+- **Registry.** `POST /api/v1/ml/train` (admin only) trains, saves the file under `MODEL_DIR`, and
+  adds a versioned row to the `ml_models` table. A model becomes the **active** one of its kind only
+  if it beats its baseline by at least 2% (the overrun model must also be well calibrated); a worse
+  model is kept for inspection and the earlier active model stays. The database allows only one
+  active model per kind. `GET /api/v1/ml/models` lists them with their metrics.
+- **The planner uses the delay model only when it can.** Before solving, `DelayModelCost` turns the
+  active delay model into the same per-slot cost arrays the train counts would give (the extra
+  predicted delay of covering that slot, summed over a window: an additive approximation that fits
+  the solver). If there is no active model, no traffic data, an unknown section, or the file is
+  missing, corrupt or fails, the plan uses the train-count cost, logs `ml_inference_fallback`, and
+  records which cost it used in the plan (`model_versions`, shown on the Compare tab). Setting
+  `ML_COST_ENABLED=0` switches the model off.
+- **Not wired in:** the overrun model is trained and registered, but the planner does not yet
+  replace planned durations with its buffered ones.
+- **Model files are pickles** (joblib). Only files this application wrote, named in the registry and
+  inside `MODEL_DIR`, are loaded; never put files from elsewhere there.
+
+Try it: log in as `admin@blockplanner.test`, `POST /api/v1/ml/train` with `{}`, then run a plan and
+look at `model_versions` in `GET /api/v1/plans/{id}`.
+
 ## Decisions made while building (and why)
 
 - **Plans are readable by every signed-in role.** The spec's endpoint table lists P, A, V but its
@@ -297,10 +336,17 @@ Honest list of what is not done or not verified:
   (minimum gap between blocks, standard corridor windows, work that may never share a block) are
   open questions in the spec and are not modelled.
 - Migrations were only run on SQLite.
+- **The models learned an invented process.** Their accuracy numbers say the machinery works (it
+  beats its baselines on a held-out later period, without leakage), not that delay or overrun on
+  real railways can be predicted this well. Real data (block actuals, the Traffic Management System)
+  is needed, as the spec says. The delay model sees the average train weight instead of the full
+  category mix, because the traffic profile does not store categories.
 
 ## Future work
 
-- Machine learning (delay and overrun predictors behind the cost interface, with fallback).
+- ML: use the overrun model's buffered durations in the plan, retrain from recorded block actuals
+  instead of synthetic data, a model for asset risk, drift monitoring, and a `/metrics` endpoint
+  (the fallback counter exists but is not exposed).
 - More hardening: Prometheus metrics, a Redis-backed login limiter, an audit-log reader, a security
   review, load tests of the API (only the solver is benchmarked).
 - Decomposition by division or corridor and a rolling horizon, so 200 or more requests plan well.

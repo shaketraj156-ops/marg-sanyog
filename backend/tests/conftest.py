@@ -10,6 +10,13 @@ import os
 # Must be set before app modules read settings.
 os.environ["JWT_SECRET"] = "test-only-secret-key-that-is-long-enough-0123456789"
 os.environ["SOLVER_WORKERS"] = "1"  # one worker keeps solver tests repeatable
+import atexit
+import shutil
+import tempfile
+
+_MODEL_DIR = tempfile.mkdtemp(prefix="bp-test-models-")
+os.environ["MODEL_DIR"] = _MODEL_DIR  # trained model files go here, never into the project
+atexit.register(shutil.rmtree, _MODEL_DIR, True)
 os.environ["LOGIN_RATE_LIMIT_PER_MINUTE"] = "100000"  # many tests log in from the same address
 os.environ["SOLVER_ISOLATION"] = "0"  # in-process solves are much faster; test_isolated covers the child process
 

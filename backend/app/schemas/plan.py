@@ -52,6 +52,7 @@ class PlanOut(BaseModel):
     best_bound: float | None
     gap: float | None
     metrics: dict | None
+    model_versions: dict  # where the cost came from: delay model version or train counts
     deferred_request_ids: list[int]
     error: str | None
     created_by: int

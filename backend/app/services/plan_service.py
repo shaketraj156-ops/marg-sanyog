@@ -15,6 +15,7 @@ from app.db.models import (
     Section,
     User,
 )
+from app.ml.predict import choose_cost
 from app.planner.plan import Plan
 from app.planner.slots import hhmm
 from app.planner.snapshot import (
@@ -154,6 +155,8 @@ def build_snapshot(db: Session, run: PlanRun) -> Snapshot:
     ]
     sections = sorted({r.section for r in requests})
     cost, trains = traffic_service.load_arrays(db, sections, start_date, days, run.slot_minutes)
+    # Use the active delay model for the cost when one beats its baseline; otherwise train counts.
+    cost, run.model_versions = choose_cost(db, sections, cost, trains, days, start_date)
     return Snapshot(
         days=days,
         slot_minutes=run.slot_minutes,
@@ -274,6 +277,7 @@ def plan_out(db: Session, run: PlanRun) -> PlanOut:
         best_bound=run.best_bound,
         gap=gap,
         metrics=run.metrics,
+        model_versions=run.model_versions or {},
         deferred_request_ids=list(deferred),
         error=run.error,
         created_by=run.created_by,

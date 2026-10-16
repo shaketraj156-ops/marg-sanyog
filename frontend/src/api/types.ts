@@ -149,6 +149,7 @@ export interface Plan {
   best_bound: number | null
   gap: number | null
   metrics: PlanResultMetrics | null
+  model_versions?: Record<string, string>
   deferred_request_ids: number[]
   error: string | null
   created_by: number

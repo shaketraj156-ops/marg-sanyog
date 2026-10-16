@@ -122,6 +122,7 @@ def start_backend(workdir: Path, password: str):
         "JWT_SECRET": secrets.token_urlsafe(48),
         "SEED_PASSWORD": password,
         "SOLVER_ISOLATION": "1",
+        "MODEL_DIR": str(workdir / "models"),  # trained models stay in the throwaway folder
         "LOGIN_RATE_LIMIT_PER_MINUTE": "1000",  # the checks log in as every role from one address
         "PYTHONPATH": str(BACKEND),
     }
@@ -430,6 +431,33 @@ def story(api: Api, password: str) -> Checks:
         need(status == 409 and body["title"] == "block_overlap", f"overlap: {status} {body}")
         need(body["conflicts"], "the overlap response must say which block conflicts")
 
+    def ml_model_drives_the_cost():
+        status, _, _ = api.call("POST", "/api/v1/ml/train", "planner", {"days": 40})
+        need(status == 403, f"only an admin may train, got {status}")
+        trained = api.ok("POST", "/api/v1/ml/train", "admin", {"kind": "delay", "days": 40}, expect=201)
+        delay = trained["results"][0]
+        need(delay["beats_baseline"] and delay["is_active"], f"the delay model should beat its baseline: {delay['metrics']}")
+        need(delay["metrics"]["mae"] < delay["metrics"]["baseline_mae"], "model error must be below the baseline's")
+        listed = api.ok("GET", "/api/v1/ml/models", "planner")["items"]
+        need(any(m["kind"] == "delay" and m["is_active"] for m in listed), "the active model must be listed")
+        status, _, _ = api.call("GET", "/api/v1/ml/models", "viewer")
+        need(status == 403, "a viewer must not list models")
+        # a fresh request, planned after the model is active, uses it for the cost
+        day = (START + timedelta(days=5)).isoformat()
+        body = {"section_code": "D-E", "work_type": "track", "duration_minutes": 120,
+                "earliest_date": day, "deadline_date": day, "priority": 2}
+        made = api.ok("POST", "/api/v1/requests", "engg", body, expect=201)
+        api.ok("POST", f"/api/v1/requests/{made['id']}/submit", "engg", {})
+        accepted = api.ok("POST", "/api/v1/plans", "planner", horizon | {"time_limit_s": 5}, expect=202)
+        deadline = time.time() + 90
+        while time.time() < deadline:
+            plan = api.ok("GET", f"/api/v1/plans/{accepted['id']}", "viewer")
+            if plan["status"] not in ("queued", "running"):
+                break
+            time.sleep(1)
+        need(plan["status"] == "succeeded", f"plan with the model: {plan['status']} {plan.get('error')}")
+        need(plan["model_versions"].get("cost", "").startswith("delay_model:v"), f"cost source: {plan['model_versions']}")
+
     for name, fn in [
         ("health, logins and error format", health_and_login),
         ("reference data", reference_data),
@@ -448,6 +476,7 @@ def story(api: Api, password: str) -> Checks:
         ("approve, stale parent, roles", approve_and_stale_parent),
         ("publish and the calendar", publish_and_calendar),
         ("overlapping publish is refused", overlapping_publish_is_refused),
+        ("delay model is trained and drives the plan cost", ml_model_drives_the_cost),
     ]:
         checks.run(name, fn)
     return checks

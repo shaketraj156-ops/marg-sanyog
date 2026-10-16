@@ -15,6 +15,12 @@ const ROWS: { key: keyof PlanMetrics; label: string; hours?: boolean }[] = [
   { key: 'deferred', label: 'Requests not placed' },
 ]
 
+function describeCost(versions: Record<string, string>): string {
+  const cost = versions.cost ?? ''
+  if (cost.startsWith('delay_model')) return `predicted delay (${cost.replace('delay_model:', 'delay model ')})`
+  return versions.ml_fallback ? `train counts (${versions.ml_fallback})` : 'train counts'
+}
+
 export function CompareTab({ plan, schedule, sections }: { plan: Plan; schedule: Schedule; sections: string[] }) {
   const baseline = useAsync(() => api.baseline(plan.id), [plan.id])
   const metrics = plan.metrics
@@ -71,6 +77,7 @@ export function CompareTab({ plan, schedule, sections }: { plan: Plan; schedule:
               : ''}
           {metrics.solver ? `, ${metrics.solver.wall_time_s} s` : ''}.
           {metrics.solver?.note ? ` ${metrics.solver.note}` : ''}
+          {plan.model_versions?.cost ? ` Cost: ${describeCost(plan.model_versions)}.` : ''}
         </p>
       </div>
 

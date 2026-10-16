@@ -7,6 +7,7 @@ from app.db.models.block_request import (
 )
 from app.db.models.department import Department
 from app.db.models.explanation import EXPLANATION_CODES, Explanation
+from app.db.models.ml_model import ML_KINDS, MlModel
 from app.db.models.plan import (
     BLOCK_STATUSES,
     PLAN_STATUSES,
@@ -24,6 +25,7 @@ __all__ = [
     "CATEGORIES",
     "DEPENDENCY_RELATIONS",
     "EXPLANATION_CODES",
+    "ML_KINDS",
     "PLAN_STATUSES",
     "REQUEST_STATUSES",
     "ROLES",
@@ -32,6 +34,7 @@ __all__ = [
     "BlockRequest",
     "Department",
     "Explanation",
+    "MlModel",
     "PlanAssignment",
     "PlanRun",
     "RefreshToken",

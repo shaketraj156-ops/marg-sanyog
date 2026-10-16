@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import auth, blocks, health, me, plans, reference, requests, traffic
+from app.api.v1 import auth, blocks, health, me, ml, plans, reference, requests, traffic
 from app.config import get_settings
 from app.core.errors import install_handlers
 from app.core.logging import RequestLogMiddleware, setup_logging
@@ -56,4 +56,5 @@ api_v1.include_router(requests.router)
 api_v1.include_router(plans.router)
 api_v1.include_router(traffic.router)
 api_v1.include_router(blocks.router)
+api_v1.include_router(ml.router)
 app.include_router(api_v1)

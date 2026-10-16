@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     login_max_failures: int = 5  # failed logins for one email before it is locked out
     login_lockout_seconds: int = 900
     login_rate_limit_per_minute: int = 10  # login attempts per client address per minute
+    model_dir: str = "models"  # where trained model files are saved
+    ml_cost_enabled: bool = True  # use an active delay model for the cost, when one beats its baseline
     solver_isolation: bool = True  # run each solve in a child process so a native crash cannot kill the API
     cors_origins: list[str] = []
     log_level: str = "INFO"

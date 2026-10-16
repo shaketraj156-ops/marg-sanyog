@@ -80,11 +80,16 @@ with `encoding="utf-8"` (Windows defaults to cp1252 and corrupts non-ASCII text)
 | F1 frontend (`frontend/`) | done: 97 Vitest tests, build OK, 19/19 browser steps (`frontend/scripts/run-smoke.ps1`) |
 | F2 end-to-end check (`backend/scripts/e2e_check.py`) | done: 17/17 over real HTTP; also `tests/e2e`; 457 backend tests |
 | M7 hardening (login lockout, `/ready`, JSON logs, `scripts/benchmark.py`, greedy warm start) | done: 527 backend tests; benchmark results in the README |
-| M6 ML | planned, last |
+| M6 ML (`app/ml/`: data, train, registry, predict; `/ml/models`, `/ml/train`) | done: 72 ML tests, 599 backend tests, e2e 18/18 |
 
 Last full test run before this file was written: 437 passed (backend).
 
 ## Gotchas learned the hard way
+
+- ML (`app/ml/`): the planner hook is `plan_service.build_snapshot -> ml.predict.choose_cost`; it must
+  never raise (every failure becomes a fallback to train counts plus a log line and a counter).
+  A model is activated only if it beats its baseline (`train.MIN_IMPROVEMENT`). Tests keep model
+  files in a temp `MODEL_DIR` (conftest); the real folder `backend/models/` is gitignored.
 
 - The solver starts from `planner/warmstart.greedy_plan` (always valid, checker-verified), not from
   the baseline. If the solver returns nothing in time, `plan_runner` keeps that plan and notes it.

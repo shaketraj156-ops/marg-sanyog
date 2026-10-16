@@ -17,4 +17,4 @@ def test_the_full_workflow_works_through_the_real_api():
     )
     output = result.stdout + result.stderr
     assert result.returncode == 0, output
-    assert "17/17 checks passed" in output, output
+    assert "18/18 checks passed" in output, output
