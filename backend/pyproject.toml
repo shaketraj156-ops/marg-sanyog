@@ -13,6 +13,7 @@ dependencies = [
   "PyJWT",
   "argon2-cffi",
   "tzdata",
+  "ortools",
 ]
 
 [project.optional-dependencies]

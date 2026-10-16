@@ -9,6 +9,7 @@ import os
 
 # Must be set before app modules read settings.
 os.environ["JWT_SECRET"] = "test-only-secret-key-that-is-long-enough-0123456789"
+os.environ["SOLVER_WORKERS"] = "1"  # one worker keeps solver tests repeatable
 
 import pytest
 from fastapi.testclient import TestClient
@@ -203,3 +204,39 @@ def submit_request(client, world, create_request):
         return response.json()
 
     return _submit
+
+
+HORIZON = {
+    "horizon_start": "2026-10-19T00:00:00+05:30",
+    "horizon_end": "2026-10-26T00:00:00+05:30",
+    "time_limit_s": 5,
+}
+
+
+@pytest.fixture
+def inline_planner(monkeypatch, session_factory):
+    """Run plan jobs immediately in the calling thread, against the test database."""
+    from app.services import plan_runner
+
+    calls = []
+
+    def submit(run_id):
+        calls.append(run_id)
+        plan_runner.run_plan(run_id)
+
+    monkeypatch.setattr(plan_runner, "open_session", session_factory)
+    monkeypatch.setattr(plan_runner, "submit", submit)
+    return calls
+
+
+@pytest.fixture
+def create_plan(client, world, inline_planner):
+    def _create(who="planner", key=None, **overrides):
+        headers = dict(world.h(who))
+        if key:
+            headers["Idempotency-Key"] = key
+        response = client.post("/api/v1/plans", json={**HORIZON, **overrides}, headers=headers)
+        assert response.status_code == 202, response.text
+        return response.json()
+
+    return _create
