@@ -8,10 +8,16 @@ HTTP_CODES = {404: "not_found", 405: "method_not_allowed"}
 
 class ProblemError(Exception):
     def __init__(
-        self, status: int, code: str, detail: str, headers: dict[str, str] | None = None
+        self,
+        status: int,
+        code: str,
+        detail: str,
+        headers: dict[str, str] | None = None,
+        extra: dict | None = None,
     ):
         super().__init__(detail)
         self.status, self.code, self.detail, self.headers = status, code, detail, headers
+        self.extra = extra or {}
 
 
 def problem(
@@ -32,7 +38,7 @@ def problem(
 def install_handlers(app: FastAPI) -> None:
     @app.exception_handler(ProblemError)
     async def on_problem(_: Request, exc: ProblemError):
-        return problem(exc.status, exc.code, exc.detail, exc.headers)
+        return problem(exc.status, exc.code, exc.detail, exc.headers, **exc.extra)
 
     @app.exception_handler(RequestValidationError)
     async def on_validation(_: Request, exc: RequestValidationError):

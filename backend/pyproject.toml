@@ -12,6 +12,7 @@ dependencies = [
   "psycopg[binary]",
   "PyJWT",
   "argon2-cffi",
+  "tzdata",
 ]
 
 [project.optional-dependencies]

@@ -138,3 +138,68 @@ def auth_headers(login):
         return {"Authorization": f"Bearer {response.json()['access_token']}"}
 
     return _headers
+
+
+class World:
+    """Departments, sections and one user per role, with lazily created auth headers."""
+
+    def __init__(self, auth_headers, departments):
+        self._auth_headers = auth_headers
+        self._cache = {}
+        self.departments = departments
+
+    def h(self, name):
+        if name not in self._cache:
+            self._cache[name] = self._auth_headers(f"{name}@example.test")
+        return self._cache[name]
+
+
+@pytest.fixture
+def world(make_department, make_section, make_user, auth_headers):
+    departments = {
+        code: make_department(code, name)
+        for code, name in [("ENGG", "Engineering"), ("TRD", "Traction"), ("SNT", "Signal")]
+    }
+    for code in ("A-B", "B-C", "C-D", "D-E"):
+        make_section(code, code.replace("-", " to "), "DIV-1", 2)
+    make_user("engg@example.test", "dept_user", departments["ENGG"])
+    make_user("trd@example.test", "dept_user", departments["TRD"])
+    make_user("snt@example.test", "dept_user", departments["SNT"])
+    make_user("planner@example.test", "planner")
+    make_user("admin@example.test", "admin")
+    make_user("viewer@example.test", "viewer")
+    return World(auth_headers, departments)
+
+
+def request_body(**overrides):
+    body = {
+        "section_code": "A-B",
+        "work_type": "track",
+        "duration_minutes": 180,
+        "earliest_date": "2026-10-19",
+        "deadline_date": "2026-10-23",
+        "priority": 3,
+    }
+    body.update(overrides)
+    return body
+
+
+@pytest.fixture
+def create_request(client, world):
+    def _create(who="engg", **overrides):
+        response = client.post("/api/v1/requests", json=request_body(**overrides), headers=world.h(who))
+        assert response.status_code == 201, response.text
+        return response.json()
+
+    return _create
+
+
+@pytest.fixture
+def submit_request(client, world, create_request):
+    def _submit(who="engg", **overrides):
+        created = create_request(who, **overrides)
+        response = client.post(f"/api/v1/requests/{created['id']}/submit", headers=world.h(who))
+        assert response.status_code == 200, response.text
+        return response.json()
+
+    return _submit

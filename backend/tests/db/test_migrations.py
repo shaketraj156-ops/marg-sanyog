@@ -8,11 +8,12 @@ from alembic.autogenerate import compare_metadata
 from alembic.config import Config
 from alembic.migration import MigrationContext
 
+import app.db.models  # noqa: F401
 from app.config import get_settings
 from app.db.base import Base
 
 BACKEND = Path(__file__).resolve().parents[2]
-TABLES = {"departments", "sections", "users", "refresh_tokens"}
+TABLES = set(Base.metadata.tables)  # every table the models define
 
 
 @pytest.fixture
