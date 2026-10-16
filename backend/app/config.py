@@ -8,6 +8,9 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg://app:app@localhost:5432/blockplanner"
     redis_url: str = "redis://localhost:6379/0"
+    jwt_secret: str  # no default: the app refuses to start without it
+    access_token_minutes: int = 15
+    refresh_token_days: int = 7
     slot_minutes: int = 30
     max_block_minutes: int = 360
     cors_origins: list[str] = []
