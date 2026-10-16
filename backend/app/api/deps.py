@@ -1,6 +1,6 @@
 from collections.abc import Callable, Iterator
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
@@ -22,6 +22,7 @@ def get_db() -> Iterator[Session]:
 
 
 def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
     db: Session = Depends(get_db),
 ) -> User:
@@ -32,6 +33,7 @@ def get_current_user(
     # Role and active flag come from the database, so changes apply immediately.
     if user is None or not user.is_active:
         raise ProblemError(401, "invalid_token", "Token is invalid", _BEARER)
+    request.state.user_id = user.id  # picked up by the request log line
     return user
 
 

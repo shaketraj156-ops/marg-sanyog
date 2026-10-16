@@ -130,7 +130,7 @@ export interface PlanMetrics {
 export interface PlanResultMetrics {
   baseline: PlanMetrics
   integrated: PlanMetrics
-  solver: { wall_time_s: number; gap: number | null }
+  solver: { wall_time_s: number; gap: number | null; note?: string | null }
 }
 
 export interface Plan {

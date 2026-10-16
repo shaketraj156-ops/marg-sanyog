@@ -28,6 +28,7 @@ The design is in [`docs/Backend_Specification.md`](docs/Backend_Specification.md
 | Explanations, conflicts, what-if, override (child plan), approve, publish, published calendar | Built and tested |
 | `scripts/demo.py` end-to-end demo | Run, and covered by a smoke test |
 | End-to-end check through the real HTTP API (`backend/scripts/e2e_check.py`): real server process, real background solver, all roles, the whole workflow and the failure paths | Run: 17/17 checks; also part of the test suite |
+| Hardening: login lockout and rate limit, `/ready`, JSON request logs with request ids, benchmark script | Built and tested (see [Hardening](#hardening-light) and [Benchmark](#benchmark)) |
 | Solver isolation: each solve runs in a child process, so a native crash fails one run instead of killing the server | Built and tested (crash, exception, hang, cancel) |
 | Web interface (`frontend/`): login, dashboard, requests, plans, plan detail with Gantt, calendar | Built; 97 unit and component tests; 19-step real-browser check run in Chrome |
 
@@ -130,7 +131,7 @@ Roles: **A** admin, **P** planner, **D** department user (own department), **V**
 
 | Area | Endpoints | Who |
 | --- | --- | --- |
-| Health | `GET /health` (no prefix) | public |
+| Health | `GET /health` (liveness), `GET /ready` (database, tables, solver, plan queue; 503 when not ready), both without the `/api/v1` prefix | public |
 | Auth | `POST /auth/login`, `POST /auth/refresh`, `GET /me` | public, public, all |
 | Reference | `GET /sections`, `GET /sections/{id}`, `GET /departments` | all |
 | Requests | `POST /requests`, `GET /requests`, `GET /requests/{id}`, `PATCH /requests/{id}`, `POST /requests/{id}/submit`, `POST /requests/{id}/cancel`, `PUT /requests/{id}/dependencies` | D (own), P, A write; all read |
@@ -178,6 +179,60 @@ plays the whole story over real HTTP (about 40 seconds). You can run it alone:
 Tests use in-memory SQLite. To run the same suite on Postgres, point `TEST_DATABASE_URL` at a
 **throwaway** database (the tests create and drop tables in it). That path has not been run.
 
+## Hardening (light)
+
+- **Login protection.** After 5 failed logins for one email the account is locked for 15 minutes
+  (`429 too_many_attempts` with a `Retry-After` header, even for the right password), and one
+  address may try at most 10 logins per minute (`429 rate_limited`). The counters are in memory and
+  keyed by email, so an email that does not exist behaves exactly like one that does. Settings:
+  `LOGIN_MAX_FAILURES`, `LOGIN_LOCKOUT_SECONDS`, `LOGIN_RATE_LIMIT_PER_MINUTE`.
+- **`GET /ready`.** Checks that the database answers, the tables exist, the solver loads and the
+  plan queue is moving (a run waiting more than 10 minutes with nothing running means "stalled").
+- **JSON logs with a request id.** One JSON line per request (`ts`, `level`, `request_id`, `method`,
+  `path`, `status`, `duration_ms`, `user_id`). The id is also returned in the `X-Request-ID` header
+  (a safe id sent by the caller is kept). Passwords, tokens, request bodies and query strings are
+  never logged. An unexpected error returns a problem response that quotes the request id and hides
+  the details.
+
+## Benchmark
+
+`backend/scripts/benchmark.py` solves synthetic instances (about four requests per section over 7
+days, simulated traffic, one ordering rule per eight requests) with a fixed solver time limit, runs
+the independent checker on every result, and has a total time budget so it never runs long:
+
+```powershell
+cd backend
+.\.venv\Scripts\python -m scripts.benchmark            # 16, 50 and 200 requests, 10 s each
+.\.venv\Scripts\python -m scripts.benchmark --sizes 50 200 --time-limit 30 --budget 105
+```
+
+Measured on the development machine (12 cores, 8 solver workers, OR-Tools 9.15, Python 3.14),
+checker violations 0 in every run. Closures, block hours and trains are independent planning →
+integrated plan. "First" is when the solver found its first plan. **Times vary from run to run**
+because other programs use the same cores; treat these as typical, not exact.
+
+| Requests (sections) | Time limit | Result | First | Gap | Closures | Block hours | Trains |
+| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: |
+| 16 (4) | 10 s | proved optimal in some runs, otherwise best found with gap 10% | 0.3 to 0.7 s | 0 to 11% | 16 → 8 | 33.5 → 25 | 37 → 9 to 11 |
+| 50 (13) | 10 s | best found, not proved | 1.1 s | 40 to 47% | 43 → 22 | 103.5 → 84 | 136 → 106 to 132 |
+| 50 (13) | 30 s | best found, not proved | 2.4 s | 27% | 43 → 24 | 103.5 → 85 | 136 → 53 |
+| 200 (50) | 10 s | essentially the valid starting plan (first plan at 5 to 10 s) | 5 to 10 s | very large | 167 → 143 | 386 → 430 | 665 → 643 |
+| 200 (50) | 30 s | best found, not proved | 5.4 s | 59% | 167 → 143 | 386 → 428.5 | 665 → 639 |
+
+What this shows, honestly:
+
+- At **16 requests** the planner gives a clearly better plan quickly and often proves it optimal.
+- At **50 requests** it is clearly better than independent planning (closures roughly halved) but
+  the solver cannot prove optimality in 10 or 30 seconds; more time keeps improving it.
+- At **200 requests** the single model is too big to solve well in 30 seconds. The first plan takes
+  5 to 10 seconds to appear (expanding the model dominates), closures fall by about 14% but block
+  hours rise slightly because a few requests are deferred. The honest conclusion matches the
+  spec's: at this size the planner needs decomposition by division or corridor and a rolling
+  horizon (not built), or a much longer time limit.
+- A run **never ends empty-handed**: a quick greedy pass builds a valid starting plan (checked by
+  the independent checker), the solver improves it, and if the time limit ends before the solver
+  has anything better, that valid starting plan is used and the run says so.
+
 ## Decisions made while building (and why)
 
 - **Plans are readable by every signed-in role.** The spec's endpoint table lists P, A, V but its
@@ -204,6 +259,11 @@ Tests use in-memory SQLite. To run the same suite on Postgres, point `TEST_DATAB
   `repair_hint` setting that has been removed). With isolation a crash fails that one run with a
   clear message and the server keeps working. It costs about a second per solve; the unit tests
   switch it off for speed and have their own tests for it.
+- **The solver starts from a valid greedy plan, not from the baseline.** The baseline ignores crews,
+  block limits and dependencies, so it is not a valid plan. The greedy plan is, and it gives the
+  solver a complete hint. Presolve is limited (`cp_model_probing_level=0`, one presolve pass)
+  because on big models the expansion of the cost lookups, not the search, was taking the whole
+  time limit; the light setting also found better plans at 16 and 50 requests.
 - **One solve at a time per process** (the solver uses the CPU cores); other runs wait as `queued`.
   A run left `queued` or `running` when the server stops is marked `failed` on the next start.
 - **Slot size is fixed to the configured `SLOT_MINUTES` (30)** so the traffic profile and plans
@@ -219,9 +279,13 @@ Honest list of what is not done or not verified:
 - **Plan jobs run in a thread inside the API process** (no Celery, no Redis). They do not survive
   a restart, there is no `GET /plans/{id}/events` stream and no `POST /plans/{id}/cancel`. Poll
   `GET /plans/{id}` instead.
-- **Solve quality depends on time and cores.** On the 16-request demo the solver usually ends at
-  its time limit with a good plan and a reported gap, not a proof of optimality. One worker is much
-  weaker than eight. Larger sizes are measured in the benchmark section once it has been run.
+- **Solve quality depends on time, cores and size.** Small instances (16 requests) are solved well
+  and often proved optimal; at 50 requests the plan is good but not proved; at 200 requests the
+  result within 30 seconds is weak (see [Benchmark](#benchmark)). One worker is much weaker than
+  eight. Decomposition by division and a rolling horizon, which the spec proposes for scale, are
+  not built.
+- **Login limits live in one process's memory.** They reset when the server restarts and would not
+  be shared between several API processes (that needs Redis, which this project does not use).
 - **Not implemented from the spec:** resources and crew calendars (crews are a flat 2 per
   department), `section_links`, multi-section and power blocks (`needs_power_block` is stored but
   not planned), block actuals, a reader for the audit log, user management endpoints, server-sent
@@ -237,8 +301,9 @@ Honest list of what is not done or not verified:
 ## Future work
 
 - Machine learning (delay and overrun predictors behind the cost interface, with fallback).
-- Hardening: login rate limiting and lockout, readiness check, structured request logging,
-  benchmarks, security review.
+- More hardening: Prometheus metrics, a Redis-backed login limiter, an audit-log reader, a security
+  review, load tests of the API (only the solver is benchmarked).
+- Decomposition by division or corridor and a rolling horizon, so 200 or more requests plan well.
 - Real queue (Celery and Redis), progress streaming, cancellation.
 - Resource calendars, power blocks across feeding sections, block actuals feeding the models.
 - Adapters for the real Traffic Management System and Traction Distribution Management System.

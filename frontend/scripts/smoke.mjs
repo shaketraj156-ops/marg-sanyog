@@ -156,11 +156,6 @@ async function signIn(page, email) {
   await page.waitForFunction(() => !location.pathname.startsWith('/login'), { timeout: 15000 })
 }
 
-async function signOut(page) {
-  await page.evaluate(() => sessionStorage.clear())
-  await page.goto(`${APP_URL}/login`, { waitUntil: 'networkidle0' })
-}
-
 // ---------- the walk ----------
 
 const created = await prepare()

@@ -13,7 +13,9 @@ from app.db.models import PlanRun
 from app.db.session import get_session
 from app.planner.baseline import baseline_plan
 from app.planner.checker import check_plan
-from app.planner.metrics import compute_metrics
+from app.planner.metrics import compute_metrics, objective
+from app.planner.model import SolveResult
+from app.planner.warmstart import greedy_plan
 from app.services import explain, plan_service
 from app.services.solving import solve
 
@@ -58,13 +60,28 @@ def _execute(db: Session, run_id: int) -> None:
 
     snapshot = plan_service.build_snapshot(db, run)
     baseline = baseline_plan(snapshot)
+    start = greedy_plan(snapshot)  # a valid start; the baseline is not (it ignores the rules)
     result = solve(
         snapshot,
-        hints=baseline,
+        hints=start,
         time_limit_s=run.time_limit_s,
         seed=run.random_seed,
         workers=get_settings().solver_workers or None,
     )
+
+    if result.status == "UNKNOWN" and result.plan is None:
+        # The solver ran out of time before it could improve on the starting plan (it has to
+        # expand the model first, which takes seconds on big instances). The starting plan is
+        # valid, so the run still succeeds with it, and says so.
+        result = SolveResult(
+            "FEASIBLE",
+            start,
+            float(objective(snapshot, start)),
+            None,
+            result.wall_time_s,
+            "The time limit ended before the solver improved on the starting plan; "
+            "run again with a longer limit for a better one.",
+        )
 
     if result.status in ("OPTIMAL", "FEASIBLE"):
         violations = check_plan(snapshot, result.plan)
@@ -78,6 +95,7 @@ def _execute(db: Session, run_id: int) -> None:
             "solver": {
                 "wall_time_s": round(result.wall_time_s, 2),
                 "gap": result.gap,
+                "note": result.message,
             },
         }
         plan_service.save_result(

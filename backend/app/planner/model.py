@@ -30,13 +30,20 @@ class SolveResult:
 
 
 class StopOnFlag(cp_model.CpSolverSolutionCallback):
-    """Lets a caller cancel a running solve."""
+    """Lets a caller cancel a running solve, and watch its progress."""
 
-    def __init__(self, should_stop: Callable[[], bool]):
+    def __init__(
+        self,
+        should_stop: Callable[[], bool],
+        progress: Callable[[float, float], None] | None = None,
+    ):
         super().__init__()
         self.should_stop = should_stop
+        self.progress = progress
 
     def on_solution_callback(self):
+        if self.progress is not None:
+            self.progress(self.WallTime(), self.ObjectiveValue())  # (seconds, objective)
         if self.should_stop():
             self.StopSearch()
 
@@ -55,6 +62,7 @@ def solve(
     seed: int = 1,
     workers: int | None = None,
     should_stop: Callable[[], bool] = lambda: False,
+    progress: Callable[[float, float], None] | None = None,
 ) -> SolveResult:
     """fixed maps request id -> (day, start slot) to pin requests, as what-if and override do."""
     costs = costs or TrafficCountCost(snapshot)
@@ -167,11 +175,17 @@ def solve(
         for i, placed_var in placed.items():
             placement = hints.placements.get(i)
             if placement is None or (i, placement.day) not in x:
+                # deferred requests sit at their lowest day and offset 0 (as the model forces)
                 model.AddHint(placed_var, 0)
+                model.AddHint(day[i], lowest[i])
+                model.AddHint(offset[i], 0)
+                model.AddHint(start[i], lowest[i] * per_day)
                 continue
+            hinted_offset = min(placement.offset, per_day - dur[i])
             model.AddHint(placed_var, 1)
             model.AddHint(day[i], placement.day)
-            model.AddHint(offset[i], min(placement.offset, per_day - dur[i]))
+            model.AddHint(offset[i], hinted_offset)
+            model.AddHint(start[i], placement.day * per_day + hinted_offset)
             for (j, d), var in x.items():
                 if j == i:
                     model.AddHint(var, int(d == placement.day))
@@ -188,10 +202,15 @@ def solve(
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = time_limit_s
     solver.parameters.random_seed = seed
+    # Presolve is the slow part on big models (the cost lookups expand to tens of thousands of
+    # variables). Skipping probing and limiting presolve to one pass gets the first plan in a few
+    # seconds instead of more than ten at 200 requests, and found better plans at 16 and 50 too.
+    solver.parameters.cp_model_probing_level = 0
+    solver.parameters.max_presolve_iterations = 1
     # Do not set repair_hint: with several workers it aborts the whole process on tiny models
     # (OR-Tools 9.15: "Check failed: heuristics.fixed_search != nullptr"). The hints are complete.
     solver.parameters.num_workers = workers or default_workers()
-    status = solver.Solve(model, StopOnFlag(should_stop))
+    status = solver.Solve(model, StopOnFlag(should_stop, progress))
     name = solver.StatusName(status)
     if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
         return SolveResult(name, wall_time_s=solver.WallTime())

@@ -51,6 +51,19 @@ def install_handlers(app: FastAPI) -> None:
         ]
         return problem(422, "validation", "Request body is invalid", errors=errors)
 
+    @app.exception_handler(Exception)
+    async def on_unhandled(request: Request, _: Exception):
+        request_id = getattr(request.state, "request_id", None)
+        extra = {"request_id": request_id} if request_id else {}
+        headers = {"X-Request-ID": request_id} if request_id else None
+        return problem(
+            500,
+            "internal_error",
+            "Something went wrong on the server. Quote the request id when you report it.",
+            headers,
+            **extra,
+        )
+
     @app.exception_handler(StarletteHTTPException)
     async def on_http(_: Request, exc: StarletteHTTPException):
         code = HTTP_CODES.get(exc.status_code, "http_error")

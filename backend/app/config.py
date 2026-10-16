@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     max_block_minutes: int = 360
     solver_workers: int = 0  # 0 means one per CPU core, at most 8
     crews_per_department: int = 2
+    login_max_failures: int = 5  # failed logins for one email before it is locked out
+    login_lockout_seconds: int = 900
+    login_rate_limit_per_minute: int = 10  # login attempts per client address per minute
     solver_isolation: bool = True  # run each solve in a child process so a native crash cannot kill the API
     cors_origins: list[str] = []
     log_level: str = "INFO"

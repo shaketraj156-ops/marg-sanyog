@@ -122,6 +122,7 @@ def start_backend(workdir: Path, password: str):
         "JWT_SECRET": secrets.token_urlsafe(48),
         "SEED_PASSWORD": password,
         "SOLVER_ISOLATION": "1",
+        "LOGIN_RATE_LIMIT_PER_MINUTE": "1000",  # the checks log in as every role from one address
         "PYTHONPATH": str(BACKEND),
     }
     for command in (

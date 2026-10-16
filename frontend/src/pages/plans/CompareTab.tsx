@@ -70,6 +70,7 @@ export function CompareTab({ plan, schedule, sections }: { plan: Plan; schedule:
               ? ' (proved optimal)'
               : ''}
           {metrics.solver ? `, ${metrics.solver.wall_time_s} s` : ''}.
+          {metrics.solver?.note ? ` ${metrics.solver.note}` : ''}
         </p>
       </div>
 

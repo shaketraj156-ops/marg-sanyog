@@ -334,11 +334,26 @@ def test_infeasible_result_is_recorded(client, world, monkeypatch, create_plan, 
     assert (run.status, run.solver_status) == ("infeasible", "INFEASIBLE")
 
 
-@pytest.mark.parametrize("status", ["UNKNOWN", "MODEL_INVALID"])
-def test_no_solution_fails_the_run(client, world, monkeypatch, create_plan, db, status):
-    monkeypatch.setattr(plan_runner, "solve", lambda *a, **k: SolveResult(status))
+def test_an_invalid_model_fails_the_run(client, world, monkeypatch, create_plan, db):
+    monkeypatch.setattr(plan_runner, "solve", lambda *a, **k: SolveResult("MODEL_INVALID"))
     run = _status(db, create_plan()["id"])
-    assert run.status == "failed" and status in run.error
+    assert run.status == "failed" and "MODEL_INVALID" in run.error
+
+
+def test_a_solver_that_runs_out_of_time_still_gives_the_valid_starting_plan(
+    client, world, monkeypatch, create_plan, db, submit_request
+):
+    for who in ("engg", "trd", "snt"):
+        submit_request(who)
+    monkeypatch.setattr(plan_runner, "solve", lambda *a, **k: SolveResult("UNKNOWN", wall_time_s=10.0))
+    run = _status(db, create_plan()["id"])
+    assert run.status == "succeeded"  # never empty-handed: the checker-verified starting plan is used
+    assert run.solver_status == "FEASIBLE"
+    assert run.metrics["solver"]["note"].startswith("The time limit ended")
+    assert run.best_bound is None
+    assert db.query(Block).filter_by(plan_run_id=run.id).count() >= 1
+    plan = client.get(f"{URL}/{run.id}", headers=world.h("viewer")).json()
+    assert plan["gap"] is None and plan["metrics"]["integrated"]["closures"] >= 1
 
 
 def test_a_solver_crash_fails_the_run_and_the_server_keeps_working(

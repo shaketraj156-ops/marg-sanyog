@@ -79,11 +79,19 @@ with `encoding="utf-8"` (Windows defaults to cp1252 and corrupts non-ASCII text)
 | Demo script, README, CLAUDE.md | done |
 | F1 frontend (`frontend/`) | done: 97 Vitest tests, build OK, 19/19 browser steps (`frontend/scripts/run-smoke.ps1`) |
 | F2 end-to-end check (`backend/scripts/e2e_check.py`) | done: 17/17 over real HTTP; also `tests/e2e`; 457 backend tests |
-| M7 hardening, M6 ML | planned, in this order |
+| M7 hardening (login lockout, `/ready`, JSON logs, `scripts/benchmark.py`, greedy warm start) | done: 527 backend tests; benchmark results in the README |
+| M6 ML | planned, last |
 
 Last full test run before this file was written: 437 passed (backend).
 
 ## Gotchas learned the hard way
+
+- The solver starts from `planner/warmstart.greedy_plan` (always valid, checker-verified), not from
+  the baseline. If the solver returns nothing in time, `plan_runner` keeps that plan and notes it.
+  Presolve is deliberately light (`cp_model_probing_level=0`, one pass): do not undo it without
+  re-running `scripts/benchmark.py` (200 requests took 11 s just to start searching otherwise).
+- Tests set `LOGIN_RATE_LIMIT_PER_MINUTE=100000`; the login guard is cached, so a fixture clears
+  `get_login_guard` between tests. Scripts that log in a lot (smoke, e2e) raise the limit too.
 
 - **Never set `solver.parameters.repair_hint`**: with several workers OR-Tools aborts the whole
   process on tiny models. Solves run in a child process by default (`app/planner/isolated.py`,

@@ -7,9 +7,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1 import auth, blocks, health, me, plans, reference, requests, traffic
 from app.config import get_settings
 from app.core.errors import install_handlers
+from app.core.logging import RequestLogMiddleware, setup_logging
 from app.services import plan_service
 
 settings = get_settings()
+setup_logging(settings.log_level)
 
 # The Vite dev server for the frontend, always allowed in addition to CORS_ORIGINS.
 DEV_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]
@@ -35,11 +37,13 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="Block planner API", lifespan=lifespan)
 install_handlers(app)
 
+app.add_middleware(RequestLogMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=sorted({*settings.cors_origins, *DEV_ORIGINS}),
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Request-ID", "Retry-After"],
 )
 
 app.include_router(health.router)
