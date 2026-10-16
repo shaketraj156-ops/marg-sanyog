@@ -27,6 +27,7 @@ The design is in [`docs/Backend_Specification.md`](docs/Backend_Specification.md
 | Synthetic timetable generator, traffic profile, CSV/JSON upload, traffic-aware cost | Built and tested |
 | Explanations, conflicts, what-if, override (child plan), approve, publish, published calendar | Built and tested |
 | `scripts/demo.py` end-to-end demo | Run, and covered by a smoke test |
+| Web interface (`frontend/`): login, dashboard, requests, plans, plan detail with Gantt, calendar | Built; 97 unit and component tests; 19-step real-browser check run in Chrome |
 
 Everything above was run on **SQLite**. See [Limitations](#limitations) for what was not run.
 
@@ -57,6 +58,25 @@ Demo users (all use the password you chose for `SEED_PASSWORD`):
 | `planner@blockplanner.test` | planner |
 | `engg@blockplanner.test`, `trd@blockplanner.test`, `snt@blockplanner.test` | department users |
 | `viewer@blockplanner.test` | viewer (read-only) |
+
+## Web interface
+
+Start everything with one command from the repository root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start.ps1
+```
+
+It applies any pending database migrations, then opens the backend (<http://127.0.0.1:8000/docs>) and
+the frontend (<http://localhost:5173>) in two windows. Log in as `planner@blockplanner.test`.
+Details, pages and role rules are in [`frontend/README.md`](frontend/README.md).
+
+To check the interface in a real browser (needs Google Chrome):
+
+```powershell
+cd frontend
+powershell -ExecutionPolicy Bypass -File scripts\run-smoke.ps1
+```
 
 ## Demo
 

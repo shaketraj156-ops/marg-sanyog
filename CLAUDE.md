@@ -29,6 +29,16 @@ Backend for an AI-powered railway block planner (Smart India Hackathon 2026, PS 
 `JWT_SECRET` has no default; copy `.env.example` to `.env` (gitignored). The shell tool here has
 trouble with very long multi-heredoc commands: prefer the Write/Edit tools for files.
 
+## Frontend (`frontend/`)
+
+React + Vite + TypeScript, React Router, recharts, Vitest. Start both apps with `.\start.ps1`
+(repo root). `npm test`, `npm run build`, `npm run lint` from `frontend/`.
+`scripts/run-smoke.ps1` is the real-browser check (headless Chrome, throwaway backend on 8001).
+Rules that matter: tokens only in memory + `sessionStorage`; role rules in `src/lib/permissions.ts`
+mirror the backend; times are shown straight from the API's `+05:30` strings (no browser time zone);
+`erasableSyntaxOnly` is on (no enums or constructor parameter properties); write Python edit scripts
+with `encoding="utf-8"` (Windows defaults to cp1252 and corrupts non-ASCII text).
+
 ## Layout (`backend/`)
 
 - `app/main.py` app, routers, lifespan (marks unfinished plan runs failed on start).
@@ -67,7 +77,8 @@ trouble with very long multi-heredoc commands: prefer the Write/Edit tools for f
 | M0 skeleton, M1 auth/reference | done, committed |
 | M2 requests, M3 planner, M4 traffic, M5 review workflow | done, committed |
 | Demo script, README, CLAUDE.md | done |
-| F1 frontend, F2 end-to-end check, M7 hardening, M6 ML | planned, in this order |
+| F1 frontend (`frontend/`) | done: 97 Vitest tests, build OK, 19/19 browser steps (`frontend/scripts/run-smoke.ps1`) |
+| F2 end-to-end check, M7 hardening, M6 ML | planned, in this order |
 
 Last full test run before this file was written: 437 passed (backend).
 

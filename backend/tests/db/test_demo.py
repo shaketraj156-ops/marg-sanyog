@@ -22,6 +22,7 @@ def test_demo_script_runs_and_the_integrated_plan_wins(tmp_path):
         capture_output=True,
         text=True,
         timeout=300,
+        check=False,
     )
     assert result.returncode == 0, result.stdout + result.stderr
     out = result.stdout
