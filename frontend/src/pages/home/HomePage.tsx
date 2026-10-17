@@ -7,7 +7,7 @@ import { HeroScene } from './scene/HeroScene'
 import './home.css'
 
 // How many pixels of scrolling it takes the train to reach the end of the line.
-const SCROLL_DISTANCE = 5200
+const SCROLL_DISTANCE = 3000
 
 export function HomePage() {
   const { user } = useAuth()
