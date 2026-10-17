@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     solver_isolation: bool = True  # run each solve in a child process so a native crash cannot kill the API
     # NoDecode: the value is read as plain text and split by the validator below, so a plain URL cannot
     # stop the app from starting (the JSON-list form is still accepted).
+    # When set, "Try the demo" on the login page signs in as this account without a password. Only a
+    # read-only (viewer) account is ever used; anything else is refused. Empty means the demo login is off.
+    demo_login_email: str = ""
     cors_origins: Annotated[list[str], NoDecode] = []
     log_level: str = "INFO"
 

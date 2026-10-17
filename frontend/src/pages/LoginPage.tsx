@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { api } from '../api'
 import { ApiError } from '../api/client'
+import type { DemoStatus } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
 import { Field } from '../components/ui'
 import { describeError } from '../lib/errors'
@@ -17,7 +19,7 @@ const DEMO_USERS = [
 ]
 
 export function LoginPage() {
-  const { user, login } = useAuth()
+  const { user, login, demoLogin } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const from = (location.state as { from?: string } | null)?.from ?? '/dashboard'
@@ -27,6 +29,24 @@ export function LoginPage() {
   const [busy, setBusy] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [capsLock, setCapsLock] = useState(false)
+  const [demo, setDemo] = useState<DemoStatus | null>(null)
+
+  // Ask the server whether it offers the one-click, read-only demo. If it does not (or cannot be
+  // reached), the page simply shows the normal form.
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const status = await api.demoStatus()
+        if (!cancelled) setDemo(status)
+      } catch {
+        // the demo button is optional
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   if (user) return <Navigate to={from} replace />
 
@@ -37,6 +57,20 @@ export function LoginPage() {
     markIntroPending() // set before signing in: the page changes as soon as the session exists
     try {
       await login(email.trim(), password)
+      navigate(from, { replace: true })
+    } catch (e) {
+      clearIntroFlag()
+      setError(e)
+      setBusy(false)
+    }
+  }
+
+  const tryDemo = async () => {
+    setBusy(true)
+    setError(null)
+    markIntroPending()
+    try {
+      await demoLogin()
       navigate(from, { replace: true })
     } catch (e) {
       clearIntroFlag()
@@ -64,6 +98,22 @@ export function LoginPage() {
         <p className="muted">AI-powered automatic block planning for railway maintenance (simulation).</p>
         <h1 className="login-title">Welcome back</h1>
         <p className="muted login-lead">Sign in to plan, review and publish railway blocks.</p>
+        {demo?.enabled && (
+          <>
+            <div className="demo-box">
+              <p>
+                <strong>Just looking around?</strong> Open every page with a read-only demo account. No password needed.
+              </p>
+              <button type="button" className="btn btn-accent btn-block" onClick={tryDemo} disabled={busy}>
+                {busy ? 'Opening the demo...' : 'Try the demo (read-only)'}
+              </button>
+              <p className="muted demo-note">The demo can look at everything but cannot change anything.</p>
+            </div>
+            <div className="login-divider">
+              <span>or sign in with your account</span>
+            </div>
+          </>
+        )}
         <form onSubmit={submit} noValidate>
           <Field label="Email">
             <input
@@ -116,20 +166,22 @@ export function LoginPage() {
         <p className="login-back">
           <Link to="/">← Back to the homepage</Link>
         </p>
-        <details className="demo-users">
-          <summary>Demo users (created by the seed script)</summary>
-          <ul>
-            {DEMO_USERS.map(([address, label]) => (
-              <li key={address}>
-                <button type="button" className="link" onClick={() => setEmail(address)}>
-                  {address}
-                </button>
-                <span className="muted"> {label}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="muted">Everyone uses the password you chose for SEED_PASSWORD.</p>
-        </details>
+        {!demo?.enabled && (
+          <details className="demo-users">
+            <summary>Demo users (created by the seed script)</summary>
+            <ul>
+              {DEMO_USERS.map(([address, label]) => (
+                <li key={address}>
+                  <button type="button" className="link" onClick={() => setEmail(address)}>
+                    {address}
+                  </button>
+                  <span className="muted"> {label}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="muted">Everyone uses the password you chose for SEED_PASSWORD.</p>
+          </details>
+        )}
       </div>
     </div>
   )

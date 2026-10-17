@@ -16,6 +16,12 @@ export interface User {
   department: Department | null
 }
 
+/** Whether the login page should offer the one-click, read-only demo. */
+export interface DemoStatus {
+  enabled: boolean
+  email: string | null
+}
+
 export interface TokenPair {
   access_token: string
   refresh_token: string

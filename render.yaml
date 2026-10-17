@@ -23,3 +23,5 @@ services:
         sync: false # your Vercel address, for example https://your-app.vercel.app (a JSON list also works)
       - key: SOLVER_WORKERS
         value: "2"
+      - key: DEMO_LOGIN_EMAIL
+        value: viewer@blockplanner.test # turns on "Try the demo (read-only)" on the login page; only a viewer account is ever used

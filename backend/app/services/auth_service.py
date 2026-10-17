@@ -25,6 +25,20 @@ def authenticate(db: Session, email: str, password: str) -> User:
     return user
 
 
+def demo_user(db: Session) -> User | None:
+    """The read-only account that the demo login signs in as, or None when the demo login is off.
+
+    Only an active viewer is ever returned, so a wrong DEMO_LOGIN_EMAIL (an admin, say) cannot give
+    anyone more than read access."""
+    email = get_settings().demo_login_email.strip().lower()
+    if not email:
+        return None
+    user = db.scalar(select(User).where(User.email == email))
+    if user is None or not user.is_active or user.role != "viewer":
+        return None
+    return user
+
+
 def issue_tokens(db: Session, user: User) -> TokenPair:
     access = create_access_token(user.id)
     refresh, jti, expires_at = create_refresh_token(user.id)

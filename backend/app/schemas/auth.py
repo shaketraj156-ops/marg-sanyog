@@ -11,6 +11,11 @@ class LoginIn(BaseModel):
         return value.strip() if isinstance(value, str) else value
 
 
+class DemoStatus(BaseModel):
+    enabled: bool
+    email: str | None = None
+
+
 class RefreshIn(BaseModel):
     refresh_token: str = Field(min_length=1)
 

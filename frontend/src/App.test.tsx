@@ -7,7 +7,7 @@ const state = vi.hoisted(() => ({ access: null as string | null }))
 const mocks = vi.hoisted(() => ({ me: vi.fn(), plans: vi.fn(), requests: vi.fn() }))
 
 vi.mock('./api', () => ({
-  api: { login: vi.fn(), me: mocks.me, plans: mocks.plans, requests: mocks.requests },
+  api: { login: vi.fn(), demoStatus: vi.fn().mockResolvedValue({ enabled: false, email: null }), me: mocks.me, plans: mocks.plans, requests: mocks.requests },
   tokens: {
     getAccess: () => state.access,
     clear: () => {

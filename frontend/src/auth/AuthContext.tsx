@@ -8,6 +8,8 @@ interface AuthState {
   /** True while the saved session is being checked after a page load. */
   loading: boolean
   login(email: string, password: string): Promise<void>
+  /** Signs in as the read-only demo account, when the server offers one. */
+  demoLogin(): Promise<void>
   logout(): void
 }
 
@@ -53,7 +55,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(await api.me())
   }, [])
 
-  const value = useMemo(() => ({ user, loading, login, logout }), [user, loading, login, logout])
+  const demoLogin = useCallback(async () => {
+    await api.demoLogin()
+    setUser(await api.me())
+  }, [])
+
+  const value = useMemo(() => ({ user, loading, login, demoLogin, logout }), [user, loading, login, demoLogin, logout])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 

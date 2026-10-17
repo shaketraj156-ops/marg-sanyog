@@ -1432,3 +1432,38 @@ input:disabled {
 .app.bg3d .legend {
   text-shadow: 0 0 10px rgba(243, 245, 248, 0.95), 0 0 4px rgba(243, 245, 248, 0.95);
 }
+
+/* ---------- one-click demo on the login page ---------- */
+.demo-box {
+  margin: 4px 0 14px;
+  padding: 14px 16px;
+  background: var(--amber-soft);
+  border: 1px solid #e7c76c;
+  border-radius: 12px;
+}
+.demo-box p {
+  margin: 0 0 10px;
+}
+.demo-box .btn-block {
+  margin-top: 0;
+}
+.demo-note {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+  text-align: center;
+}
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0 14px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}

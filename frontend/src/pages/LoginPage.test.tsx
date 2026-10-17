@@ -8,10 +8,12 @@ const state = vi.hoisted(() => ({ access: null as string | null }))
 const mocks = vi.hoisted(() => ({
   login: vi.fn(),
   me: vi.fn(),
+  demoStatus: vi.fn(),
+  demoLogin: vi.fn(),
 }))
 
 vi.mock('../api', () => ({
-  api: { login: mocks.login, me: mocks.me },
+  api: { login: mocks.login, me: mocks.me, demoStatus: mocks.demoStatus, demoLogin: mocks.demoLogin },
   tokens: {
     getAccess: () => state.access,
     clear: () => {
@@ -53,6 +55,9 @@ beforeEach(() => {
   state.access = null
   mocks.login.mockReset()
   mocks.me.mockReset()
+  mocks.demoLogin.mockReset()
+  mocks.demoStatus.mockReset()
+  mocks.demoStatus.mockResolvedValue({ enabled: false, email: null }) // no demo login unless a test turns it on
 })
 
 describe('login page', () => {
@@ -126,6 +131,62 @@ describe('login page', () => {
     expect(mocks.login).toHaveBeenCalledWith('planner@blockplanner.test', 'right')
     expect(screen.getByText('Demo Planner')).toBeInTheDocument()
     expect(screen.getByText('Planner')).toBeInTheDocument()
+  })
+})
+
+const viewer: User = {
+  id: 6,
+  email: 'viewer@blockplanner.test',
+  name: 'Demo Viewer',
+  role: 'viewer',
+  department: null,
+}
+
+describe('the one-click demo', () => {
+  it('is not offered when the server has no demo login', async () => {
+    app()
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument()
+    await waitFor(() => expect(mocks.demoStatus).toHaveBeenCalled())
+    expect(screen.queryByRole('button', { name: /Try the demo/ })).toBeNull()
+    expect(screen.getByText('Demo users (created by the seed script)')).toBeInTheDocument()
+  })
+
+  it('is not offered when the server cannot be asked', async () => {
+    mocks.demoStatus.mockRejectedValue(new ApiError(0, 'network_error', 'Cannot reach the server.'))
+    app()
+    await waitFor(() => expect(mocks.demoStatus).toHaveBeenCalled())
+    expect(screen.queryByRole('button', { name: /Try the demo/ })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument()
+  })
+
+  it('is offered when the server has it, and the account list is hidden', async () => {
+    mocks.demoStatus.mockResolvedValue({ enabled: true, email: 'viewer@blockplanner.test' })
+    app()
+    expect(await screen.findByRole('button', { name: /Try the demo/ })).toBeInTheDocument()
+    expect(screen.queryByText('Demo users (created by the seed script)')).toBeNull()
+    // the normal form is still there
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument()
+  })
+
+  it('signs in as the read-only demo account without a password', async () => {
+    mocks.demoStatus.mockResolvedValue({ enabled: true, email: 'viewer@blockplanner.test' })
+    mocks.demoLogin.mockResolvedValue({ access_token: 'a', refresh_token: 'r' })
+    mocks.me.mockResolvedValue(viewer)
+    app()
+    fireEvent.click(await screen.findByRole('button', { name: /Try the demo/ }))
+    expect(await screen.findByText('Dashboard page')).toBeInTheDocument()
+    expect(mocks.demoLogin).toHaveBeenCalledTimes(1)
+    expect(mocks.login).not.toHaveBeenCalled()
+    expect(screen.getByText('Demo Viewer')).toBeInTheDocument()
+  })
+
+  it('says so when the demo cannot be opened', async () => {
+    mocks.demoStatus.mockResolvedValue({ enabled: true, email: 'viewer@blockplanner.test' })
+    mocks.demoLogin.mockRejectedValue(new ApiError(404, 'demo_unavailable', 'The demo login is not available.'))
+    app()
+    fireEvent.click(await screen.findByRole('button', { name: /Try the demo/ }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('not available')
+    expect(screen.getByRole('button', { name: /Try the demo/ })).toBeEnabled()
   })
 })
 

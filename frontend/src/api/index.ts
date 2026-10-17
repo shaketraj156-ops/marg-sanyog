@@ -20,6 +20,7 @@ import type {
   User,
   WhatIfResult,
   Department,
+  DemoStatus,
 } from './types'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000'
@@ -47,6 +48,12 @@ export const api = {
     tokens.set(pair.access_token, pair.refresh_token)
     return pair
   },
+  async demoLogin(): Promise<TokenPair> {
+    const pair = await client.post<TokenPair>(`${V1}/auth/demo`, undefined, { auth: false })
+    tokens.set(pair.access_token, pair.refresh_token)
+    return pair
+  },
+  demoStatus: () => client.get<DemoStatus>(`${V1}/auth/demo`),
   me: () => client.get<User>(`${V1}/me`),
 
   // reference data
