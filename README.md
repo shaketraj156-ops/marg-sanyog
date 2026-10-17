@@ -89,12 +89,12 @@ accounts only; use a different password for anything shared.
 
 | Email | Password | Role |
 | --- | --- | --- |
-| `admin@blockplanner.test` | `DemoPass#2026` | admin |
-| `planner@blockplanner.test` | `DemoPass#2026` | planner |
-| `engg@blockplanner.test` | `DemoPass#2026` | department user |
-| `trd@blockplanner.test` | `DemoPass#2026` | department user |
-| `snt@blockplanner.test` | `DemoPass#2026` | department user |
-| `viewer@blockplanner.test` | `DemoPass#2026` | viewer (read-only) |
+| `admin@blockplanner.test` | `omU0RP8PBuwqOY2f` | admin |
+| `planner@blockplanner.test` | `omU0RP8PBuwqOY2f` | planner |
+| `engg@blockplanner.test` | `omU0RP8PBuwqOY2f` | department user |
+| `trd@blockplanner.test` | `omU0RP8PBuwqOY2f` | department user |
+| `snt@blockplanner.test` | `omU0RP8PBuwqOY2f` | department user |
+| `viewer@blockplanner.test` | `omU0RP8PBuwqOY2f` | viewer (read-only) |
 
 ### Common problems
 
