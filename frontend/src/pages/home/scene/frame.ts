@@ -71,6 +71,10 @@ export interface Frame {
   translate: { mountains: number; skyline: number; hills: number; clouds: number; world: number }
 }
 
+/** The station, ground and train get this share of the tint that darkens the distant layers, so the
+ * train stays easy to see at night. */
+export const FRONT_TINT = 0.6
+
 export function frameState(t: number, offset: number): Frame {
   const sunProgress = clamp(t / 0.56)
   const moonProgress = smoothstep(0.5, 0.92, t)

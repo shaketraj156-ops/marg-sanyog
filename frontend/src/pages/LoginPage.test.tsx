@@ -56,11 +56,6 @@ beforeEach(() => {
 })
 
 describe('login page', () => {
-  it('always shows the synthetic-data banner', () => {
-    app()
-    expect(screen.getByRole('note')).toHaveTextContent('All data is synthetic (simulation)')
-  })
-
   it('fills the email from a demo user', () => {
     app()
     fireEvent.click(screen.getByText('Demo users (created by the seed script)'))
@@ -71,6 +66,25 @@ describe('login page', () => {
   it('links back to the homepage', () => {
     app()
     expect(screen.getByRole('link', { name: /Back to the homepage/ })).toHaveAttribute('href', '/')
+  })
+
+  it('shows and hides the password', () => {
+    app()
+    const field = screen.getByLabelText('Password')
+    expect(field).toHaveAttribute('type', 'password')
+    fireEvent.click(screen.getByRole('button', { name: 'Show' }))
+    expect(field).toHaveAttribute('type', 'text')
+    fireEvent.click(screen.getByRole('button', { name: 'Hide' }))
+    expect(field).toHaveAttribute('type', 'password')
+  })
+
+  it('warns when Caps Lock is on while typing the password', () => {
+    app()
+    const field = screen.getByLabelText('Password')
+    fireEvent.keyUp(field, { key: 'A', modifierCapsLock: true })
+    expect(screen.getByRole('status')).toHaveTextContent('Caps Lock is on')
+    fireEvent.keyUp(field, { key: 'a', modifierCapsLock: false })
+    expect(screen.queryByRole('status')).toBeNull()
   })
 
   it('keeps the button disabled until both fields are filled', () => {

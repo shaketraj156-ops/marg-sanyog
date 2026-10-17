@@ -86,7 +86,7 @@ describe('the homepage content', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/One closure\s*for every department\./)
     expect(screen.getByText('Simulation: all data is synthetic')).toBeInTheDocument()
     expect(screen.getByText(/nothing here\s+controls trains, signals or power/)).toBeInTheDocument()
-    expect(document.title).toMatch(/Block Planner/)
+    expect(document.title).toMatch(/MARG SANYOG/)
   })
 
   it('offers a login in the navigation, the hero and at the end', () => {

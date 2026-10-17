@@ -7,7 +7,7 @@ import { useAuth } from '../../auth/AuthContext'
 import { Empty, ErrorMessage, Field, Loading, StatusBadge } from '../../components/ui'
 import { usePolling, useAsync } from '../../hooks/useAsync'
 import { canRunPlans } from '../../lib/permissions'
-import { addDays, fmtDate, fmtDateTime, istMidnight, nextMonday } from '../../lib/time'
+import { addDays, fmtDate, fmtDateTime, istMidnight, nextMonday, percentReduction } from '../../lib/time'
 
 const ACTIVE = ['queued', 'running']
 const DEFAULT_WEIGHTS: PlanWeights = { block: 150, traffic: 10, delay: 20, defer: 1000 }
@@ -93,7 +93,10 @@ export function PlansPage() {
   return (
     <div className="stack">
       <div className="page-title">
-        <h1>Plans</h1>
+        <div>
+          <h1>Plans</h1>
+          <p className="page-sub">Run the optimizer over a week of submitted requests, then review, approve and publish the result.</p>
+        </div>
       </div>
 
       <section className="card">
@@ -166,6 +169,9 @@ export function PlansPage() {
               <span className="muted">
                 <span className="spinner" aria-hidden="true" /> solving, up to {current.time_limit_s} seconds. This page
                 checks every 2 seconds.
+                <span className="progress" aria-hidden="true">
+                  <i />
+                </span>
               </span>
             )}
             {current.status === 'succeeded' && (
@@ -223,7 +229,7 @@ export function PlansPage() {
                   <td>{pair(p, 'closures')}</td>
                   <td>{pair(p, 'block_hours')}</td>
                   <td>{pair(p, 'trains_affected')}</td>
-                  <td>{p.solver_status ?? '-'}</td>
+                  <td>{solverBadge(p.solver_status)}</td>
                   <td>{fmtDateTime(p.created_at)}</td>
                 </tr>
               ))}
@@ -236,7 +242,25 @@ export function PlansPage() {
   )
 }
 
-function pair(plan: Plan, key: 'closures' | 'block_hours' | 'trains_affected'): string {
+function pair(plan: Plan, key: 'closures' | 'block_hours' | 'trains_affected') {
   if (!plan.metrics) return '-'
-  return `${plan.metrics.baseline[key]} → ${plan.metrics.integrated[key]}`
+  const before = plan.metrics.baseline[key]
+  const after = plan.metrics.integrated[key]
+  const cut = percentReduction(before, after)
+  return (
+    <span className="metric">
+      <span className="metric-before">{before}</span> → <span className="metric-after">{after}</span>
+      {cut !== null && cut !== 0 && (
+        <small className={`metric-delta ${cut > 0 ? 'good-text' : 'bad-text'}`}>
+          {cut > 0 ? `-${cut}%` : `+${-cut}%`}
+        </small>
+      )}
+    </span>
+  )
+}
+
+function solverBadge(status: string | null) {
+  if (!status) return '-'
+  const tone = status.toLowerCase() === 'optimal' ? 'good' : status.toLowerCase() === 'feasible' ? 'warn' : 'neutral'
+  return <span className={`badge badge-${tone}`}>{status}</span>
 }

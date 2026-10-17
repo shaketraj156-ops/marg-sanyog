@@ -25,7 +25,7 @@ import {
   trees,
   wheelCentres,
 } from './geometry'
-import { bob, doorsOpen, frameState, journey, signalGreen, signalX, wheelAngle } from './frame'
+import { FRONT_TINT, bob, doorsOpen, frameState, journey, signalGreen, signalX, wheelAngle } from './frame'
 
 interface Props {
   /** The section that is pinned while the scene plays. */
@@ -98,7 +98,10 @@ function HeroSceneInner({ triggerRef, animated, scrollDistance, onProgress }: Pr
     opacity('clouds', f.cloudsOpacity)
     opacity('nightTint', f.nightTint)
     opacity('warmTint', f.warmTint)
+    opacity('warmTintFront', f.warmTint * FRONT_TINT)
+    opacity('nightTintFront', f.nightTint * FRONT_TINT)
     opacity('lights', f.lightsOpacity)
+    opacity('lightsFront', f.lightsOpacity)
     opacity('sun', f.sun.opacity)
     opacity('moon', f.moon.opacity)
     move('sun', f.sun.x, f.sun.y)
@@ -322,6 +325,18 @@ function HeroSceneInner({ triggerRef, animated, scrollDistance, onProgress }: Pr
         ))}
       </g>
 
+      {/* ---- the tint of the hour over the distant layers, then their lit windows. Both sit behind the
+           station and the train, so the train is never covered by the lit windows ---- */}
+      <rect ref={ref('warmTint')} x={-FAR_X} y={-200} width={FAR_X * 2 + 1600} height={1400} fill="url(#tintWarm)" opacity="0" />
+      <rect ref={ref('nightTint')} x={-FAR_X} y={-200} width={FAR_X * 2 + 1600} height={1400} fill="url(#tintNight)" opacity="0" />
+      <g ref={ref('lights')} opacity="0">
+        <g ref={ref('skylineLit')}>
+          {s.buildings.map((b, i) => (
+            <rect key={i} x={b.x} y={742 - b.h} width={b.w} height={b.h} fill={`url(#lit${['A', 'B', 'C'][i % 3]})`} opacity={0.55 + (i % 4) * 0.12} />
+          ))}
+        </g>
+      </g>
+
       {/* ---- the world the train passes: overhead line, station canopies, signals ---- */}
       <g ref={ref('world')} data-testid="world">
         <path d={s.messenger} stroke="#2b323b" strokeWidth="1.6" fill="none" />
@@ -405,17 +420,12 @@ function HeroSceneInner({ triggerRef, animated, scrollDistance, onProgress }: Pr
         <TrainBody wheelsRef={wheels} />
       </g>
 
-      {/* ---- the tint of the hour, from the horizon down; the sky above stays clear ---- */}
-      <rect ref={ref('warmTint')} x={-FAR_X} y={-200} width={FAR_X * 2 + 1600} height={1400} fill="url(#tintWarm)" opacity="0" />
-      <rect ref={ref('nightTint')} x={-FAR_X} y={-200} width={FAR_X * 2 + 1600} height={1400} fill="url(#tintNight)" opacity="0" />
+      {/* ---- a lighter tint over the station, ground and train, so the train stays easy to see ---- */}
+      <rect ref={ref('warmTintFront')} x={-FAR_X} y={-200} width={FAR_X * 2 + 1600} height={1400} fill="url(#tintWarm)" opacity="0" />
+      <rect ref={ref('nightTintFront')} x={-FAR_X} y={-200} width={FAR_X * 2 + 1600} height={1400} fill="url(#tintNight)" opacity="0" />
 
-      {/* ---- lights, drawn over the tint so they glow at night ---- */}
-      <g ref={ref('lights')} opacity="0">
-        <g ref={ref('skylineLit')}>
-          {s.buildings.map((b, i) => (
-            <rect key={i} x={b.x} y={742 - b.h} width={b.w} height={b.h} fill={`url(#lit${['A', 'B', 'C'][i % 3]})`} opacity={0.55 + (i % 4) * 0.12} />
-          ))}
-        </g>
+      {/* ---- lights in front, drawn over the tint so they glow at night ---- */}
+      <g ref={ref('lightsFront')} opacity="0">
         <g ref={ref('worldLights')}>
           {STATIONS.flatMap((station) =>
             [-360, 0, 360].map((dx) => (

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { CSSProperties } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../../api'
 import type { BlockRequest } from '../../api/types'
@@ -6,6 +7,7 @@ import { REQUEST_STATUSES } from '../../api/types'
 import { useAuth } from '../../auth/AuthContext'
 import { ConfirmDialog, DeptChip, Empty, ErrorMessage, Field, Loading, Modal, StatusBadge } from '../../components/ui'
 import { useAsync } from '../../hooks/useAsync'
+import { deptColor } from '../../lib/gantt'
 import { canActOnRequest, canCreateRequests, canRejectRequests, stateActions } from '../../lib/permissions'
 import { fmtDate, fmtDateTime, fmtDuration } from '../../lib/time'
 import { DependencyEditor } from './DependencyEditor'
@@ -81,11 +83,15 @@ export function RequestsPage() {
   if (!user) return null
   const sections = reference.data?.sections ?? []
   const departments = reference.data?.departments ?? []
+  const allItems = everything.data?.items
 
   return (
     <div className="stack">
       <div className="page-title">
-        <h1>Block requests</h1>
+        <div>
+          <h1>Block requests</h1>
+          <p className="page-sub">Maintenance closures asked for by Engineering, TrD and S&amp;T. Submitted requests are planned together.</p>
+        </div>
         {canCreateRequests(user) ? (
           <button
             type="button"
@@ -109,6 +115,30 @@ export function RequestsPage() {
         </div>
       )}
       <ErrorMessage error={actionError} />
+
+      {allItems && (
+        <div className="stat-strip" aria-label="Requests at a glance">
+          <button
+            type="button"
+            className={`stat-tile${!filters.status ? ' active' : ''}`}
+            onClick={() => setFilter('status', '')}
+          >
+            <span className="stat-num">{allItems.length}</span>
+            <span className="stat-name">all requests</span>
+          </button>
+          {(['draft', 'submitted', 'scheduled', 'published'] as const).map((status) => (
+            <button
+              key={status}
+              type="button"
+              className={`stat-tile${filters.status === status ? ' active' : ''}`}
+              onClick={() => setFilter('status', status)}
+            >
+              <span className="stat-num">{allItems.filter((r) => r.status === status).length}</span>
+              <span className="stat-name">{status}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="filters card">
         <Field label="Status">
@@ -181,7 +211,7 @@ export function RequestsPage() {
                   const mine = canActOnRequest(user, r)
                   const allowed = stateActions(r)
                   return (
-                    <tr key={r.id}>
+                    <tr key={r.id} className="req-row" style={{ '--dept': deptColor(r.department) } as CSSProperties}>
                       <td>
                         <button type="button" className="link" onClick={() => setDialog({ kind: 'detail', request: r })}>
                           R{r.id}
@@ -191,12 +221,16 @@ export function RequestsPage() {
                         <DeptChip dept={r.department} />
                       </td>
                       <td>{r.section_code}</td>
-                      <td>{r.work_type}</td>
+                      <td>
+                        <span className="tag">{r.work_type}</span>
+                      </td>
                       <td>{fmtDuration(r.duration_minutes)}</td>
                       <td>
                         {fmtDate(r.earliest_date)} to {fmtDate(r.deadline_date)}
                       </td>
-                      <td>{r.priority}</td>
+                      <td>
+                        <span className={`prio prio-${r.priority}`}>{r.priority}</span>
+                      </td>
                       <td>
                         <StatusBadge status={r.status} />
                       </td>

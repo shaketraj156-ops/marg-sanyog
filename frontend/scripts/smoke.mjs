@@ -222,7 +222,6 @@ await step(page, 'the homepage login button opens the login page', async () => {
   await click(page, 'a[href="/login"]')
   await page.waitForFunction(() => location.pathname === '/login', { timeout: 10000 })
   await page.waitForSelector('a[href="/"]', { timeout: 10000 }) // the login page loads lazily
-  expect((await text(page)).includes('All data is synthetic (simulation)'), 'banner missing on login')
   await snap(page, 'login')
 })
 

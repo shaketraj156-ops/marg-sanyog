@@ -26,7 +26,7 @@ export function HomePage() {
   }, [])
 
   useEffect(() => {
-    document.title = 'Block Planner: plan every closure once'
+    document.title = 'MARG SANYOG: plan every closure once'
     window.scrollTo(0, 0)
   }, [])
 
@@ -43,7 +43,7 @@ export function HomePage() {
           <span className="home-mark" aria-hidden="true">
             //
           </span>
-          Block Planner
+          MARG SANYOG
         </div>
         <nav className="home-links" aria-label="Page sections">
           <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
@@ -79,7 +79,7 @@ export function HomePage() {
             <span className="gradient-text">for every department.</span>
           </h1>
           <p className="hero-lead">
-            Engineering, Traction and Signal and Telecom each ask for track time. Block Planner plans their
+            Engineering, Traction and Signal and Telecom each ask for track time. MARG SANYOG plans their
             requests together, at the quietest hours, and shows a planner exactly why.
           </p>
           <div className="hero-actions">

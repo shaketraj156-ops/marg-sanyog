@@ -207,14 +207,16 @@ export function KpiCard({
   value,
   note,
   tone = 'neutral',
+  accent = 'blue',
 }: {
   label: string
   value: string
   note?: string
   tone?: 'neutral' | 'good' | 'bad'
+  accent?: 'blue' | 'amber' | 'green' | 'purple'
 }) {
   return (
-    <div className="kpi">
+    <div className={`kpi kpi-${accent}`}>
       <div className="kpi-label">{label}</div>
       <div className="kpi-value">{value}</div>
       {note && <div className={`kpi-note kpi-note-${tone}`}>{note}</div>}

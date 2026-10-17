@@ -1,4 +1,4 @@
-# Block Planner web interface
+# MARG SANYOG web interface
 
 React + Vite + TypeScript (React Router, recharts). The Gantt timeline is plain SVG. It talks to
 the backend in `../backend`. **All data it shows is synthetic (simulation)**, and a banner says so

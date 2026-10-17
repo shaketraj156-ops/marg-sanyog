@@ -3,9 +3,11 @@ import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, XAx
 import { api } from '../api'
 import type { BlockRequest, Plan, RequestStatus } from '../api/types'
 import { REQUEST_STATUSES } from '../api/types'
+import { useAuth } from '../auth/AuthContext'
 import { CompareChart } from '../components/CompareChart'
 import { Empty, ErrorMessage, KpiCard, Loading, StatusBadge } from '../components/ui'
 import { useAsync } from '../hooks/useAsync'
+import { canRunPlans } from '../lib/permissions'
 import { fmtDateTime, fmtHours, percentReduction } from '../lib/time'
 
 const READY = ['succeeded', 'approved', 'published']
@@ -46,6 +48,7 @@ function reductionNote(before: number, after: number): { text: string; tone: 'go
 }
 
 export function DashboardPage() {
+  const { user } = useAuth()
   const { data, error, loading, reload } = useAsync(loadDashboard, [])
 
   if (loading && !data) return <Loading label="Loading the dashboard" />
@@ -66,6 +69,12 @@ export function DashboardPage() {
   const hoursNote = metrics && reductionNote(metrics.baseline.block_hours, metrics.integrated.block_hours)
   const trainsNote = metrics && reductionNote(metrics.baseline.trains_affected, metrics.integrated.trains_affected)
   const average = reductions.length ? Math.round(reductions.reduce((a, b) => a + b, 0) / reductions.length) : null
+  const firstName = user?.name.split(/\s+/)[0] ?? ''
+  const waiting = counts.submitted
+  const summary =
+    total === 0
+      ? 'No requests yet. Create one on the Requests page to get started.'
+      : `${total} ${total === 1 ? 'request' : 'requests'} in the system, ${waiting} waiting to be planned.`
 
   return (
     <div className="stack">
@@ -79,6 +88,26 @@ export function DashboardPage() {
         )}
       </div>
 
+      <section className="welcome" aria-label="Welcome">
+        <div>
+          <h2>Welcome back{firstName ? `, ${firstName}` : ''}</h2>
+          <p>{summary}</p>
+        </div>
+        <div className="welcome-actions">
+          {canRunPlans(user) && (
+            <Link className="btn btn-accent" to="/plans">
+              Run a new plan
+            </Link>
+          )}
+          <Link className="btn btn-light" to="/requests">
+            Review requests
+          </Link>
+          <Link className="btn btn-light" to="/calendar">
+            Open calendar
+          </Link>
+        </div>
+      </section>
+
       {!metrics ? (
         <Empty title="No finished plan yet">
           Create and submit some requests, then <Link to="/plans">run a plan</Link>. The comparison with independent
@@ -89,24 +118,28 @@ export function DashboardPage() {
           <section className="kpis" aria-label="Key figures of the latest plan">
             <KpiCard
               label="Closures"
+              accent="blue"
               value={String(metrics.integrated.closures)}
               note={closuresNote?.text}
               tone={closuresNote?.tone}
             />
             <KpiCard
               label="Block hours"
+              accent="amber"
               value={fmtHours(metrics.integrated.block_hours)}
               note={hoursNote?.text}
               tone={hoursNote?.tone}
             />
             <KpiCard
               label="Trains affected"
+              accent="purple"
               value={String(metrics.integrated.trains_affected)}
               note={trainsNote?.text}
               tone={trainsNote?.tone}
             />
             <KpiCard
               label="Improvement vs independent"
+              accent="green"
               value={average === null ? '-' : `${average}%`}
               note="average reduction of the three measures"
               tone={average !== null && average > 0 ? 'good' : 'neutral'}

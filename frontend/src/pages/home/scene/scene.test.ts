@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ARRIVE, DEPART } from '../../../lib/home'
-import { bob, doorsOpen, frameState, journey, signalGreen, smoothstep, wheelAngle } from './frame'
+import { FRONT_TINT, bob, doorsOpen, frameState, journey, signalGreen, smoothstep, wheelAngle } from './frame'
 import {
   CARS,
   END_OFFSET,
@@ -87,6 +87,13 @@ describe('the time of day', () => {
 
   it('keeps the sky clear: the night tint never covers it fully', () => {
     for (let t = 0; t <= 1; t += 0.05) expect(frameState(t, 0).nightTint).toBeLessThanOrEqual(0.5)
+  })
+
+  it('tints the train less than the distant layers, so it stays visible at night', () => {
+    expect(FRONT_TINT).toBeGreaterThan(0)
+    expect(FRONT_TINT).toBeLessThan(1)
+    // at the last station the train sits under at most this much tint
+    expect(frameState(ARRIVE[3], 0).nightTint * FRONT_TINT).toBeLessThan(0.3)
   })
 
   it('moves far layers slower than near ones', () => {

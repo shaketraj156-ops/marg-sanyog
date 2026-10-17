@@ -34,7 +34,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="Block planner API", lifespan=lifespan)
+app = FastAPI(title="MARG SANYOG API", lifespan=lifespan)
 install_handlers(app)
 
 app.add_middleware(RequestLogMiddleware)
