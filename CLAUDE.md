@@ -6,7 +6,6 @@ Guidance for working in this repository.
 
 Backend for an AI-powered railway block planner (Smart India Hackathon 2026, PS 26027). Design:
 `docs/Backend_Specification.md`. User-facing docs: `README.md`. **All data is synthetic.**
-`index.html` at the repo root is an unrelated static landing-page prototype (AEROVECT).
 
 ## Hard constraints (decided by the user)
 
@@ -34,7 +33,7 @@ trouble with very long multi-heredoc commands: prefer the Write/Edit tools for f
 React + Vite + TypeScript, React Router, recharts, Vitest. Start both apps with `.\start.ps1`
 (repo root). `npm test`, `npm run build`, `npm run lint` from `frontend/`.
 `scripts/run-smoke.ps1` is the real-browser check (headless Chrome, throwaway backend on 8001, frontend on 5174).
-Routes: `/` is the public homepage (`src/pages/home/`, ported from the root `index.html`); `/login`; the app is under `/dashboard`, `/requests`, `/plans`, `/calendar`.
+Routes: `/` is the public homepage (`src/pages/home/`, ported from an earlier static prototype); `/login`; the app is under `/dashboard`, `/requests`, `/plans`, `/calendar`.
 Homepage: a pinned GSAP ScrollTrigger hero. `scene/HeroScene.tsx` draws a side-view SVG scene (`xMidYMax meet`, never cropped: an earlier `slice` version cut the track off on short wide windows). The train stays centred and the world slides past; `scene/frame.ts` and `scene/geometry.ts` are pure functions with tests; stop times are `ARRIVE`/`DEPART` in `src/lib/home.ts`. Reduced motion or width under 800 shows a still scene and a plain step list.
 Rules that matter: tokens only in memory + `sessionStorage`; role rules in `src/lib/permissions.ts`
 mirror the backend; times are shown straight from the API's `+05:30` strings (no browser time zone);

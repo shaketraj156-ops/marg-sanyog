@@ -362,7 +362,7 @@ look at `model_versions` in `GET /api/v1/plans/{id}`.
 Honest list of what is not done or not verified:
 
 - **Never run on Postgres or in Docker.** Everything was run on SQLite. The Postgres exclusion
-  constraint, JSONB columns and the `docker-compose.yml` are written but untested. Docker was not
+  constraint and JSONB columns are written but untested. Docker was not
   available on the development machine.
 - **The homepage was only checked in Chrome** (headless, 1440x900, 1536x730 and 1280x560, plus the
   22-step smoke run). Firefox, Safari, touch devices and real phones were not tried; under 800 px

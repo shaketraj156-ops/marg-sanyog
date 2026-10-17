@@ -99,5 +99,3 @@ publish it, and open the calendar. Also try a wrong password to see the plain er
 - The migrations and the code on Postgres.
 - That `render.yaml` and the Python version in it are accepted by Render as written.
 - Memory and speed on free hosting plans.
-- The Docker files in this repo (`docker-compose.yml`, `backend/docker/Dockerfile.api`): they come from an
-  earlier design that also lists Redis, which the project does not use. This guide does not need them.
