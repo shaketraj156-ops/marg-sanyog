@@ -86,7 +86,7 @@ All planned stages are done and committed. Nothing is in progress.
 | M7 hardening (login lockout, `/ready`, JSON logs, `scripts/benchmark.py`, greedy warm start) | done; benchmark in the README |
 | M6 ML (`app/ml/`; `/ml/models`, `/ml/train`) | done |
 
-Last full runs: backend 601 passed, frontend 101 passed, e2e 18/18, browser 19/19.
+Last full runs: backend 601 passed, frontend 148 passed, e2e 18/18, browser 22/22.
 
 Start everything with `.\start.ps1` (repo root). Presentation steps are in the README ("Demo").
 
