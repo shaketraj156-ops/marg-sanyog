@@ -5,6 +5,7 @@ services:
     name: marg-sanyog-api
     runtime: python
     rootDir: backend
+    region: singapore # closest Render region to the Supabase database in Seoul
     plan: free # the free plan sleeps when idle and has little CPU and memory; use a paid plan for a real demo
     buildCommand: pip install .
     # Create or update the tables, then start ONE worker (the "one solve at a time" rule lives inside the
