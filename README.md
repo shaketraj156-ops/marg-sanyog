@@ -47,8 +47,8 @@ Copy-Item .env.example .env
 # 3. Create the database tables
 .\.venv\Scripts\python -m alembic upgrade head
 
-# 4. Create the demo users (pick any password; you will use it to log in)
-$env:SEED_PASSWORD = "pick-a-password"
+# 4. Create the demo users (all get the demo password DemoPass#2026; use it to log in)
+$env:SEED_PASSWORD = "DemoPass#2026"
 .\.venv\Scripts\python -m scripts.seed_synthetic
 Remove-Item Env:SEED_PASSWORD
 
@@ -76,7 +76,7 @@ This applies any pending migrations and opens two windows: the backend and the f
 | Web interface | <http://localhost:5173> |
 | API documentation | <http://127.0.0.1:8000/docs> |
 
-Log in as `planner@blockplanner.test` with the password you chose in step 4. To stop, close the two
+Log in as `planner@blockplanner.test` with the password `DemoPass#2026` (set in step 4). To stop, close the two
 windows (or press Ctrl+C in each).
 
 If you prefer to start them by hand: in `backend`, run
@@ -84,14 +84,17 @@ If you prefer to start them by hand: in `backend`, run
 
 ### Demo users
 
-All use the password you chose for `SEED_PASSWORD`.
+All use the password `DemoPass#2026` (the `SEED_PASSWORD` from step 4). These are synthetic local demo
+accounts only; use a different password for anything shared.
 
-| Email | Role |
-| --- | --- |
-| `admin@blockplanner.test` | admin |
-| `planner@blockplanner.test` | planner |
-| `engg@blockplanner.test`, `trd@blockplanner.test`, `snt@blockplanner.test` | department users |
-| `viewer@blockplanner.test` | viewer (read-only) |
+| Email | Password | Role |
+| --- | --- | --- |
+| `admin@blockplanner.test` | `DemoPass#2026` | admin |
+| `planner@blockplanner.test` | `DemoPass#2026` | planner |
+| `engg@blockplanner.test` | `DemoPass#2026` | department user |
+| `trd@blockplanner.test` | `DemoPass#2026` | department user |
+| `snt@blockplanner.test` | `DemoPass#2026` | department user |
+| `viewer@blockplanner.test` | `DemoPass#2026` | viewer (read-only) |
 
 ### Common problems
 

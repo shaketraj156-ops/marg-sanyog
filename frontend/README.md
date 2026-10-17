@@ -20,8 +20,8 @@ npm install        # first time only
 npm run dev        # http://localhost:5173
 ```
 
-Log in as `planner@blockplanner.test` (the password is the one you chose for `SEED_PASSWORD`
-when you ran the backend seed script). If the backend is not on port 8000, copy `.env.example`
+Log in as `planner@blockplanner.test` with the password `DemoPass#2026` (the `SEED_PASSWORD`
+used when you ran the backend seed script in the root README). If the backend is not on port 8000, copy `.env.example`
 to `.env` and set `VITE_API_URL`.
 
 ## Pages
