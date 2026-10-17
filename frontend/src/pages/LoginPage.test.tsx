@@ -40,7 +40,7 @@ function app(initial = '/login') {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route element={<RequireAuth />}>
-            <Route path="/" element={<p>Dashboard page</p>} />
+            <Route path="/dashboard" element={<p>Dashboard page</p>} />
             <Route path="/requests" element={<p>Requests page</p>} />
           </Route>
         </Routes>
@@ -66,6 +66,11 @@ describe('login page', () => {
     fireEvent.click(screen.getByText('Demo users (created by the seed script)'))
     fireEvent.click(screen.getByRole('button', { name: 'viewer@blockplanner.test' }))
     expect(screen.getByLabelText('Email')).toHaveValue('viewer@blockplanner.test')
+  })
+
+  it('links back to the homepage', () => {
+    app()
+    expect(screen.getByRole('link', { name: /Back to the homepage/ })).toHaveAttribute('href', '/')
   })
 
   it('keeps the button disabled until both fields are filled', () => {
@@ -135,7 +140,7 @@ describe('protected pages', () => {
   it('log out from the top bar', async () => {
     state.access = 'saved-token'
     mocks.me.mockResolvedValue(planner)
-    app('/')
+    app('/dashboard')
     fireEvent.click(await screen.findByRole('button', { name: 'Log out' }))
     expect(await screen.findByRole('button', { name: 'Sign in' })).toBeInTheDocument()
   })

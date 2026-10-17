@@ -1,4 +1,4 @@
-import { NavLink, Navigate, Outlet, useLocation } from 'react-router-dom'
+import { Link, NavLink, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { roleLabel } from '../lib/permissions'
 import { Loading } from './ui'
@@ -27,16 +27,14 @@ function Layout() {
     <div className="app">
       <SyntheticBanner />
       <header className="topbar">
-        <div className="brand">
+        <Link className="brand" to="/" title="Back to the homepage">
           <span className="brand-mark" aria-hidden="true">
             //
           </span>
           Block Planner
-        </div>
+        </Link>
         <nav className="nav" aria-label="Main">
-          <NavLink to="/" end>
-            Dashboard
-          </NavLink>
+          <NavLink to="/dashboard">Dashboard</NavLink>
           <NavLink to="/requests">Requests</NavLink>
           <NavLink to="/plans">Plans</NavLink>
           <NavLink to="/calendar">Calendar</NavLink>

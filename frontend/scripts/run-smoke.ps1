@@ -13,6 +13,7 @@ Remove-Item "$tmp\smoke.db" -Force -ErrorAction SilentlyContinue
 
 $env:DATABASE_URL = "sqlite:///" + $tmp.Replace('\', '/') + "/smoke.db"
 $env:JWT_SECRET = [guid]::NewGuid().ToString("N") + [guid]::NewGuid().ToString("N")
+$env:CORS_ORIGINS = '["http://localhost:5174"]'   # its own port, so it never clashes with a dev server on 5173
 $env:LOGIN_RATE_LIMIT_PER_MINUTE = "1000"   # the walk-through logs in many times from one address
 $env:SEED_PASSWORD = "smoke-" + [guid]::NewGuid().ToString("N").Substring(0, 10)
 
@@ -25,7 +26,7 @@ Pop-Location
 
 $env:VITE_API_URL = "http://127.0.0.1:8001"
 Push-Location $frontend
-$web = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "npm run dev" `
+$web = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "npm run dev -- --port 5174 --strictPort" `
     -PassThru -WindowStyle Hidden -RedirectStandardError "$tmp\web.err" -RedirectStandardOutput "$tmp\web.out"
 
 $ready = $false
@@ -33,7 +34,7 @@ for ($i = 0; $i -lt 40 -and -not $ready; $i++) {
     Start-Sleep -Milliseconds 500
     try {
         Invoke-RestMethod http://127.0.0.1:8001/health | Out-Null
-        Invoke-WebRequest http://localhost:5173 -UseBasicParsing | Out-Null
+        Invoke-WebRequest http://localhost:5174 -UseBasicParsing | Out-Null
         $ready = $true
     } catch { }
 }
@@ -42,7 +43,7 @@ if (-not $ready) { Write-Host "The servers did not start. See $tmp\api.err and $
 $code = 1
 if ($ready) {
     $env:API_URL = "http://127.0.0.1:8001"
-    $env:APP_URL = "http://localhost:5173"
+    $env:APP_URL = "http://localhost:5174"
     node scripts/smoke.mjs
     $code = $LASTEXITCODE
 }

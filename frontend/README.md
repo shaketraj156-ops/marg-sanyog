@@ -49,7 +49,7 @@ words. The rules live in `src/lib/permissions.ts` and mirror the backend.
 ## Tests and checks
 
 ```powershell
-npm test                  # Vitest: API client, token store, role checks, time and Gantt helpers, key components
+npm test                  # Vitest: API client, token store, role checks, time and Gantt helpers, key components, the homepage and its scene maths
 npm run build             # type-check and production build
 npm run lint              # oxlint
 powershell -ExecutionPolicy Bypass -File scripts\run-smoke.ps1
@@ -57,7 +57,7 @@ powershell -ExecutionPolicy Bypass -File scripts\run-smoke.ps1
 
 `run-smoke.ps1` is a real-browser check. It starts a throwaway backend (own database, fresh seed,
 port 8001) and the dev server, drives headless Chrome through the whole workflow (log in, filter and
-create requests, run a plan, open every tab, what-if, approve, publish, calendar, and what a viewer
+create requests, scroll the homepage train and check the track stays in view, run a plan, open every tab, what-if, approve, publish, calendar, and what a viewer
 and a department user can see), fails on any console error or page error, saves screenshots to
 `screenshots/`, and stops everything. It needs Google Chrome (set `CHROME_PATH` if it is not at the
 default location) and does not touch your real database.

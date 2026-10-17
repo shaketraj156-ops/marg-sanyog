@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { SyntheticBanner } from '../components/Layout'
@@ -20,7 +20,7 @@ export function LoginPage() {
   const { user, login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as { from?: string } | null)?.from ?? '/'
+  const from = (location.state as { from?: string } | null)?.from ?? '/dashboard'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<unknown>(null)
@@ -59,6 +59,9 @@ export function LoginPage() {
           Block Planner
         </div>
         <p className="muted">AI-powered automatic block planning for railway maintenance (simulation).</p>
+        <p>
+          <Link to="/">← Back to the homepage</Link>
+        </p>
         <form onSubmit={submit} noValidate>
           <Field label="Email">
             <input

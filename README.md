@@ -223,9 +223,9 @@ The web interface has its own checks:
 
 ```powershell
 cd frontend
-npm test                                                        # 101 unit and component tests
+npm test                                                        # 148 unit and component tests
 npm run build                                                   # type-check and production build
-powershell -ExecutionPolicy Bypass -File scripts\run-smoke.ps1  # real browser (Chrome), 19 steps
+powershell -ExecutionPolicy Bypass -File scripts\run-smoke.ps1  # real browser (Chrome), 22 steps
 ```
 
 Tests use in-memory SQLite. To run the same suite on Postgres, point `TEST_DATABASE_URL` at a
@@ -364,6 +364,9 @@ Honest list of what is not done or not verified:
 - **Never run on Postgres or in Docker.** Everything was run on SQLite. The Postgres exclusion
   constraint, JSONB columns and the `docker-compose.yml` are written but untested. Docker was not
   available on the development machine.
+- **The homepage was only checked in Chrome** (headless, 1440x900, 1536x730 and 1280x560, plus the
+  22-step smoke run). Firefox, Safari, touch devices and real phones were not tried; under 800 px
+  wide, or with reduced motion, it shows a still scene and a plain list instead of the scroll animation.
 - **Plan jobs run in a thread inside the API process** (no Celery, no Redis). They do not survive
   a restart, there is no `GET /plans/{id}/events` stream and no `POST /plans/{id}/cancel`. Poll
   `GET /plans/{id}` instead.

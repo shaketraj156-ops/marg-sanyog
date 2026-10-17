@@ -176,11 +176,59 @@ page.on('requestfailed', (request) => consoleErrors.push(`request failed: ${requ
 
 console.log('Planner walk-through')
 
-await step(page, 'signed-out visitor is sent to the login page', async () => {
+await step(page, 'homepage is public and introduces the project', async () => {
   await page.goto(APP_URL, { waitUntil: 'networkidle0' })
-  expect(new URL(page.url()).pathname === '/login', `ended at ${page.url()}`)
+  expect(new URL(page.url()).pathname === '/', `ended at ${page.url()}`)
+  const heading = await page.$eval('h1', (n) => n.innerText)
+  expect(/One closure/.test(heading) && /every department/.test(heading), `heading was: ${heading}`)
+  expect((await text(page)).toLowerCase().includes('all data is synthetic'), 'synthetic-data notice missing')
+  expect(await page.$('[data-testid=train]'), 'the train is missing')
+  expect((await page.$$('.board-name')).length === 4, 'expected four station boards')
+  await snap(page, 'home-top')
+})
+
+await step(page, 'scrolling drives the world, the station board and keeps the track in view', async () => {
+  const card = () => page.$eval('.station-board h2', (n) => n.textContent)
+  const trainX = () => page.$eval('[data-testid=world]', (n) => n.getAttribute('transform') ?? '')
+  // the bug that was fixed: on short, wide windows the rails and train were cut off at the bottom
+  const trainVisible = () =>
+    page.$eval('[data-testid=train]', (n) => {
+      const r = n.getBoundingClientRect()
+      return r.top > 0 && r.bottom < window.innerHeight && r.left >= 0 && r.right <= window.innerWidth
+    })
+  const before = await trainX()
+  expect((await card()) === 'Follow one block, start to finish', 'the introduction card should show first')
+  const seen = []
+  for (const y of [780, 2080, 3224, 4420]) {
+    await page.evaluate((top) => window.scrollTo(0, top), y)
+    await new Promise((r) => setTimeout(r, 1800))
+    seen.push(await card())
+    expect(await trainVisible(), `the train is cut off at scroll ${y}`)
+  }
+  expect(seen.join(',') === 'Request,Plan,Review,Publish', `cards seen while scrolling: ${seen.join(', ')}`)
+  expect((await trainX()) !== before, 'the train did not move')
+  await snap(page, 'home-train')
+  // the sections below the train
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+  await new Promise((r) => setTimeout(r, 800))
+  const body = await text(page)
+  expect(/An example run/.test(body) && /Arrived at the terminal/.test(body), 'the closing sections are missing')
+  await snap(page, 'home-end')
+})
+
+await step(page, 'the homepage login button opens the login page', async () => {
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await page.waitForSelector('a[href="/login"]')
+  await click(page, 'a[href="/login"]')
+  await page.waitForFunction(() => location.pathname === '/login', { timeout: 10000 })
+  await page.waitForSelector('a[href="/"]', { timeout: 10000 }) // the login page loads lazily
   expect((await text(page)).includes('All data is synthetic (simulation)'), 'banner missing on login')
   await snap(page, 'login')
+})
+
+await step(page, 'a signed-out visitor to a protected page is sent to the login page', async () => {
+  await page.goto(`${APP_URL}/dashboard`, { waitUntil: 'networkidle0' })
+  expect(new URL(page.url()).pathname === '/login', `ended at ${page.url()}`)
 })
 
 await step(page, 'wrong password shows a plain message', async () => {
@@ -318,7 +366,7 @@ await step(page, 'published calendar shows the closures', async () => {
 })
 
 await step(page, 'dashboard shows KPI cards and the comparison chart', async () => {
-  await page.goto(APP_URL, { waitUntil: 'networkidle0' })
+  await page.goto(`${APP_URL}/dashboard`, { waitUntil: 'networkidle0' })
   await page.waitForSelector('.kpi')
   expect((await page.$$('.kpi')).length === 4, 'expected four KPI cards')
   const body = await text(page)

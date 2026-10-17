@@ -1,0 +1,544 @@
+/* The public homepage. Same railway palette as the app: navy, signal blue, amber. */
+.home {
+  --navy: #0b2f5b;
+  --blue: #124b8f;
+  --amber: #f2a900;
+  --paper: #f4f6f9;
+  --ink: #17212b;
+  --muted: #55657a;
+  --line: #d3dae4;
+  background: var(--paper);
+  color: var(--ink);
+  overflow-x: hidden;
+}
+
+/* ---------- navigation ---------- */
+.home-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 14px 40px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(211, 218, 228, 0.8);
+}
+.home-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--navy);
+}
+.home-mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--navy);
+  color: var(--amber);
+  font-weight: 800;
+}
+.home-links {
+  display: flex;
+  gap: 8px;
+}
+.home-links button {
+  font: inherit;
+  font-weight: 600;
+  color: var(--muted);
+  background: none;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.home-links button:hover {
+  color: var(--navy);
+  background: rgba(11, 47, 91, 0.07);
+}
+
+/* ---------- buttons ---------- */
+.home-cta {
+  display: inline-block;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  text-align: center;
+  padding: 11px 24px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+}
+.home-cta:hover {
+  transform: translateY(-1px);
+}
+.home-cta:focus-visible,
+.home-links button:focus-visible {
+  outline: 3px solid var(--amber);
+  outline-offset: 3px;
+}
+.home-cta-dark {
+  background: var(--navy);
+  color: #fff;
+  padding: 9px 22px;
+  font-size: 0.95rem;
+}
+.home-cta-dark:hover {
+  background: #123f78;
+}
+.home-cta-primary {
+  background: var(--blue);
+  color: #fff;
+  font-size: 1.1rem;
+  padding: 14px 32px;
+  box-shadow: 0 8px 22px rgba(18, 75, 143, 0.28);
+}
+.home-cta-primary:hover {
+  background: var(--navy);
+}
+.home-cta-ghost {
+  background: #fff;
+  color: var(--navy);
+  border-color: var(--line);
+  font-size: 1.1rem;
+  padding: 14px 28px;
+}
+.home-cta-ghost:hover {
+  background: #eef2f7;
+}
+
+/* ---------- hero (pinned while the train drives) ---------- */
+.home-hero {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 460px;
+  overflow: hidden;
+  background: #9fd6fa;
+}
+.home-hero:not(.home-hero-pinned) {
+  height: auto;
+  min-height: 0;
+  padding: 96px 0 clamp(200px, 38vw, 320px);
+}
+.hero-scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  overflow: visible;
+}
+.home-hero:not(.home-hero-pinned) .hero-scene {
+  height: clamp(220px, 40vw, 340px);
+  top: auto;
+  bottom: 0;
+}
+.hero-scene .board-name {
+  font: 800 38px system-ui, sans-serif;
+  fill: #14181e;
+}
+.hero-scene .board-small {
+  font: 700 15px system-ui, sans-serif;
+  letter-spacing: 0.14em;
+  fill: #3a2f00;
+}
+.hero-scene .star {
+  animation: home-twinkle 3.2s ease-in-out infinite;
+}
+@keyframes home-twinkle {
+  50% {
+    opacity: 0.35;
+  }
+}
+.hero-scene .door-glow {
+  transition: opacity 0.35s;
+}
+.hero-copy {
+  position: relative;
+  z-index: 30;
+  box-sizing: border-box;
+  width: min(600px, 92vw);
+  margin: clamp(76px, 12vh, 120px) 0 0 clamp(20px, 5vw, 80px);
+  padding: clamp(16px, 3vh, 30px) clamp(18px, 2.4vw, 32px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1.6vh, 18px);
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 20px;
+  box-shadow: 0 18px 50px rgba(11, 47, 91, 0.22);
+  user-select: none;
+}
+.hero-badge {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(242, 169, 0, 0.45);
+  background: #fff4d6;
+  color: #7a5500;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.hero-badge i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--amber);
+  animation: home-pulse 1.6s ease-in-out infinite;
+}
+@keyframes home-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+.home h1 {
+  margin: 0;
+  font-size: clamp(1.9rem, 1.6vw + 2.4vh, 3.1rem);
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--navy);
+}
+.gradient-text {
+  background: linear-gradient(90deg, #124b8f, #1c7bd0 55%, #e08a00);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.hero-lead {
+  margin: 0;
+  font-size: clamp(0.95rem, 0.4vw + 1.3vh, 1.12rem);
+  line-height: 1.55;
+  color: #3d4d62;
+}
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* the station board: the information that changes at every station */
+.station-board {
+  position: absolute;
+  z-index: 30;
+  top: clamp(76px, 12vh, 120px);
+  right: clamp(20px, 5vw, 80px);
+  box-sizing: border-box;
+  width: min(430px, 34vw);
+  min-height: 210px; /* fixed, so the board does not jump between stations */
+  display: flex;
+  flex-direction: column;
+  background: rgba(8, 31, 62, 0.92);
+  color: #fff;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 18px 50px rgba(3, 12, 30, 0.45);
+  overflow: hidden;
+}
+.board-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 18px;
+  background: #f4c20d;
+  color: #14181e;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.board-body {
+  flex: 1;
+  padding: 14px 18px 8px;
+  animation: home-card-in 0.35s ease;
+}
+@keyframes home-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.board-body h2 {
+  margin: 0 0 6px;
+  font-size: clamp(1.2rem, 0.8vw + 1.4vh, 1.55rem);
+  color: #fff;
+}
+.board-body p {
+  margin: 0;
+  font-size: clamp(0.88rem, 0.25vw + 1.2vh, 1rem);
+  line-height: 1.5;
+  color: #cfdcee;
+}
+.board-stops {
+  list-style: none;
+  margin: 0;
+  padding: 10px 18px 14px;
+  display: flex;
+  gap: 6px;
+}
+.board-stops li {
+  flex: 1;
+  padding: 4px 0;
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #9db3d1;
+  transition: background 0.3s, color 0.3s;
+}
+.board-stops li.reached {
+  background: #f4c20d;
+  color: #14181e;
+}
+.scroll-hint {
+  position: absolute;
+  right: 48px;
+  bottom: 22px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+}
+.mouse {
+  width: 24px;
+  height: 40px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+  display: flex;
+  justify-content: center;
+  padding: 5px;
+}
+.mouse div {
+  width: 5px;
+  height: 8px;
+  background: #fff;
+  border-radius: 999px;
+  animation: home-bounce 1.2s infinite;
+}
+@keyframes home-bounce {
+  50% {
+    transform: translateY(10px);
+  }
+}
+
+/* short windows: keep the train and the text apart */
+@media (max-height: 700px) {
+  .hero-lead {
+    display: none;
+  }
+  .station-board {
+    min-height: 170px;
+  }
+}
+@media (max-height: 560px) {
+  .hero-badge,
+  .scroll-hint {
+    display: none;
+  }
+}
+@media (max-width: 1100px) {
+  .station-board {
+    top: auto;
+    bottom: 30%;
+    width: min(430px, 60vw);
+  }
+}
+
+/* ---------- the sections below the train ---------- */
+.home-section {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 96px 32px;
+}
+.section-title {
+  margin: 0 0 14px;
+  font-size: clamp(1.8rem, 2.4vw + 1rem, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--navy);
+}
+.section-lead {
+  max-width: 44em;
+  margin: 0 0 36px;
+  font-size: 1.15rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 22px;
+  margin-top: 32px;
+}
+.feature {
+  padding: 26px 26px 22px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-top: 5px solid var(--blue);
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(11, 47, 91, 0.05);
+}
+.feature h3 {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+  color: var(--navy);
+}
+.feature p {
+  margin: 0;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.home-section-dark {
+  max-width: none;
+  background: var(--navy);
+  color: #fff;
+}
+.home-section-dark > * {
+  max-width: 1116px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.home-section-dark .section-title {
+  color: #fff;
+}
+.home-section-dark .section-lead {
+  color: #c8d6ea;
+}
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 22px;
+}
+.result {
+  padding: 26px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+.result-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #c8d6ea;
+}
+.result-values {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin: 6px 0;
+  font-size: 2.2rem;
+  font-weight: 800;
+}
+.result-before {
+  color: #9db3d1;
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+.result-after {
+  color: var(--amber);
+  font-size: 3rem;
+}
+.result-change {
+  color: #c8d6ea;
+}
+.home-final {
+  text-align: center;
+}
+.home-final .section-lead {
+  margin-left: auto;
+  margin-right: auto;
+}
+.home-footer {
+  padding: 28px 32px 36px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+}
+
+/* shown instead of the train when motion is off or the screen is narrow */
+.steps-static {
+  list-style: none;
+  margin: 24px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+.steps-static li {
+  display: flex;
+  gap: 18px;
+  padding: 20px 22px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-left: 6px solid var(--amber);
+  border-radius: 12px;
+}
+.steps-static h3 {
+  margin: 0;
+  color: var(--navy);
+}
+.steps-static p {
+  margin: 4px 0 0;
+}
+.steps-static .muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.steps-number {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--navy);
+  color: #fff;
+  font-weight: 800;
+}
+
+@media (max-width: 800px) {
+  .home-nav {
+    padding: 12px 18px;
+  }
+  .home-links {
+    display: none;
+  }
+  .hero-copy {
+    margin-left: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-badge i,
+  .mouse div,
+  .hero-scene .star,
+  .board-body {
+    animation: none;
+  }
+}

@@ -33,7 +33,9 @@ trouble with very long multi-heredoc commands: prefer the Write/Edit tools for f
 
 React + Vite + TypeScript, React Router, recharts, Vitest. Start both apps with `.\start.ps1`
 (repo root). `npm test`, `npm run build`, `npm run lint` from `frontend/`.
-`scripts/run-smoke.ps1` is the real-browser check (headless Chrome, throwaway backend on 8001).
+`scripts/run-smoke.ps1` is the real-browser check (headless Chrome, throwaway backend on 8001, frontend on 5174).
+Routes: `/` is the public homepage (`src/pages/home/`, ported from the root `index.html`); `/login`; the app is under `/dashboard`, `/requests`, `/plans`, `/calendar`.
+Homepage: a pinned GSAP ScrollTrigger hero. `scene/HeroScene.tsx` draws a side-view SVG scene (`xMidYMax meet`, never cropped: an earlier `slice` version cut the track off on short wide windows). The train stays centred and the world slides past; `scene/frame.ts` and `scene/geometry.ts` are pure functions with tests; stop times are `ARRIVE`/`DEPART` in `src/lib/home.ts`. Reduced motion or width under 800 shows a still scene and a plain step list.
 Rules that matter: tokens only in memory + `sessionStorage`; role rules in `src/lib/permissions.ts`
 mirror the backend; times are shown straight from the API's `+05:30` strings (no browser time zone);
 `erasableSyntaxOnly` is on (no enums or constructor parameter properties); write Python edit scripts
@@ -79,7 +81,7 @@ All planned stages are done and committed. Nothing is in progress.
 | M0 skeleton, M1 auth/reference | done |
 | M2 requests, M3 planner, M4 traffic, M5 review workflow | done |
 | Demo script (`scripts/demo.py`), `scripts/load_demo_data.py`, README, CLAUDE.md | done |
-| F1 frontend (`frontend/`) | done: 101 Vitest tests, build OK, 19/19 browser steps (`frontend/scripts/run-smoke.ps1`) |
+| F1 frontend (`frontend/`) | done: 148 Vitest tests, build OK, 22/22 browser steps (includes the public homepage) (`frontend/scripts/run-smoke.ps1`) |
 | F2 end-to-end check (`backend/scripts/e2e_check.py`) | done: 18/18 over real HTTP; also `tests/e2e` |
 | M7 hardening (login lockout, `/ready`, JSON logs, `scripts/benchmark.py`, greedy warm start) | done; benchmark in the README |
 | M6 ML (`app/ml/`; `/ml/models`, `/ml/train`) | done |
