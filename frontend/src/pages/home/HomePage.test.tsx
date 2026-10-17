@@ -85,7 +85,6 @@ describe('the homepage content', () => {
     page()
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/One closure\s*for every department\./)
     expect(screen.getByText('Simulation: all data is synthetic')).toBeInTheDocument()
-    expect(screen.getByText(/nothing here\s+controls trains, signals or power/)).toBeInTheDocument()
     expect(document.title).toMatch(/MARG SANYOG/)
   })
 

@@ -199,10 +199,6 @@ export function HomePage() {
         )}
       </section>
 
-      <footer className="home-footer">
-        Smart India Hackathon 2026 · Problem Statement 26027 · All data is synthetic (simulation); nothing here
-        controls trains, signals or power.
-      </footer>
     </div>
   )
 }
