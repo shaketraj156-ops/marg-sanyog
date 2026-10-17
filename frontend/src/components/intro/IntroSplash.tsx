@@ -54,7 +54,7 @@ export default function IntroSplash({ name, onDone }: { name: string; onDone: ()
     <div className={`intro-overlay${leaving ? ' intro-leaving' : ''}`} role="dialog" aria-label="Welcome animation">
       <canvas ref={canvasRef} className="intro-canvas" aria-hidden="true" />
       <div className="intro-copy">
-        <p className="intro-hello">Welcome, {firstName}</p>
+        <p className="intro-hello">Welcome to</p>
         <p className="intro-title">MARG SANYOG</p>
         <p className="intro-tag">One closure for every department.</p>
       </div>
