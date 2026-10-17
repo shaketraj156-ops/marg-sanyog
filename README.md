@@ -30,7 +30,7 @@ The design is in [`docs/Backend_Specification.md`](docs/Backend_Specification.md
 | Machine learning (light): synthetic data, delay and overrun models vs baselines, time-based split, registry, `/ml/models`, `/ml/train`, delay-model cost with fallback | Built and tested (leakage and fallback tests; checked over real HTTP) |
 | Hardening: login lockout and rate limit, `/ready`, JSON request logs with request ids, benchmark script | Built and tested (see [Hardening](#hardening-light) and [Benchmark](#benchmark)) |
 | Solver isolation: each solve runs in a child process, so a native crash fails one run instead of killing the server | Built and tested (crash, exception, hang, cancel) |
-| Web interface (`frontend/`): public homepage, login (with a one-click read-only demo), dashboard, requests, plans, plan detail with Gantt, calendar | Built; 148 unit and component tests; 22-step real-browser check run in Chrome (zero console errors) |
+| Web interface (`frontend/`): public homepage (scroll-driven train), login (with a one-click read-only demo), a short train welcome after sign-in, a 3D railway background that can be switched off, dashboard, requests, plans, plan detail with Gantt, calendar | Built; 148 unit and component tests; 22-step real-browser check run in Chrome (zero console errors) |
 
 **Test counts at the last full run:** backend 601 tests, frontend 148 tests, end-to-end check 18/18
 over real HTTP, browser check 22/22. Everything above was run on **SQLite**. See
@@ -364,7 +364,10 @@ Honest list of what is not done or not verified:
   available on the development machine.
 - **The homepage was only checked in Chrome** (headless, 1440x900, 1536x730 and 1280x560, plus the
   22-step smoke run). Firefox, Safari, touch devices and real phones were not tried; under 800 px
-  wide, it shows a still scene and a plain list instead of the scroll animation.
+  wide, it shows a still scene and a plain list instead of the scroll animation. The homepage
+  train, the welcome after sign-in and the 3D background run even when the operating system reports
+  "reduce motion" (many laptops report it without the user choosing it). The welcome and background
+  were not checked on those laptops, and the background needs WebGL; automated browsers skip both.
 - **Plan jobs run in a thread inside the API process** (no Celery, no Redis). They do not survive
   a restart, there is no `GET /plans/{id}/events` stream and no `POST /plans/{id}/cancel`. Poll
   `GET /plans/{id}` instead.
