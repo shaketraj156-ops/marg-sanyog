@@ -34,7 +34,7 @@ React + Vite + TypeScript, React Router, recharts, Vitest. Start both apps with 
 (repo root). `npm test`, `npm run build`, `npm run lint` from `frontend/`.
 `scripts/run-smoke.ps1` is the real-browser check (headless Chrome, throwaway backend on 8001, frontend on 5174).
 Routes: `/` is the public homepage (`src/pages/home/`, ported from an earlier static prototype); `/login`; the app is under `/dashboard`, `/requests`, `/plans`, `/calendar`.
-Homepage: a pinned GSAP ScrollTrigger hero. `scene/HeroScene.tsx` draws a side-view SVG scene (`xMidYMax meet`, never cropped: an earlier `slice` version cut the track off on short wide windows). The train stays centred and the world slides past; `scene/frame.ts` and `scene/geometry.ts` are pure functions with tests; stop times are `ARRIVE`/`DEPART` in `src/lib/home.ts`. Reduced motion or width under 800 shows a still scene and a plain step list.
+Homepage: a pinned GSAP ScrollTrigger hero. `scene/HeroScene.tsx` draws a side-view SVG scene (`xMidYMax meet`, never cropped: an earlier `slice` version cut the track off on short wide windows). The train stays centred and the world slides past; `scene/frame.ts` and `scene/geometry.ts` are pure functions with tests; stop times are `ARRIVE`/`DEPART` in `src/lib/home.ts`. Width under 800 shows a still scene and a plain step list.
 Rules that matter: tokens only in memory + `sessionStorage`; role rules in `src/lib/permissions.ts`
 mirror the backend; times are shown straight from the API's `+05:30` strings (no browser time zone);
 `erasableSyntaxOnly` is on (no enums or constructor parameter properties); write Python edit scripts

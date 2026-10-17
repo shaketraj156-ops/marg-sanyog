@@ -17,12 +17,11 @@ export function stepForProgress(progress: number): number {
   return step
 }
 
-/** True when the scroll-driven journey should run: not for people who asked for less motion, and
- * not on narrow screens, where the pinned scene does not fit. Those get the still picture. */
+/** True when the scroll-driven journey should run: not on narrow screens, where the pinned scene
+ * does not fit. Those get the still picture. The "reduce motion" setting is not checked: the train
+ * only moves while the visitor scrolls, and many laptops report that setting without the user
+ * having chosen it (animations off in Windows, battery saver), which left the train standing. */
 export function canAnimate(): boolean {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
-  return (
-    !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
-    window.matchMedia('(min-width: 800px)').matches
-  )
+  return window.matchMedia('(min-width: 800px)').matches
 }

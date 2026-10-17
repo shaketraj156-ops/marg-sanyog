@@ -57,9 +57,9 @@ describe('whether the train animation runs', () => {
     expect(canAnimate()).toBe(true)
   })
 
-  it('does not run for people who asked for less motion', () => {
+  it('still runs when the browser reports reduced motion (the train moves only on scroll)', () => {
     media(true, true)
-    expect(canAnimate()).toBe(false)
+    expect(canAnimate()).toBe(true)
   })
 
   it('does not run on a narrow screen', () => {
