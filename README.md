@@ -26,7 +26,6 @@ The design is in [`docs/Backend_Specification.md`](docs/Backend_Specification.md
 | Git | any | `git --version` |
 | Google Chrome | only for the optional browser check | |
 
-No Docker, Redis or database server is needed: the database is a SQLite file created for you.
 
 ### One-time setup
 
@@ -123,7 +122,7 @@ cd frontend
 powershell -ExecutionPolicy Bypass -File scripts\run-smoke.ps1
 ```
 
-## Demo
+## DemoNo
 
 ### Present it in the web interface (recommended)
 
