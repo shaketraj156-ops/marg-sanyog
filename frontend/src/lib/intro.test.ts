@@ -42,10 +42,10 @@ describe('the welcome after signing in', () => {
     expect(shouldPlayIntro()).toBe(false)
   })
 
-  it('is skipped for people who asked for less motion', () => {
+  it('still plays when the browser reports reduced motion', () => {
     stubMotion(true)
     markIntroPending()
-    expect(shouldPlayIntro()).toBe(false)
+    expect(shouldPlayIntro()).toBe(true)
   })
 
   it('is skipped for automated browsers, which the overlay would block', () => {

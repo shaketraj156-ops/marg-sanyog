@@ -27,11 +27,10 @@ function pending(): boolean {
   }
 }
 
-/** Play the welcome only right after a sign-in, and never for people who asked for less motion or
- * for automated browsers (the real-browser smoke test would be blocked by the overlay). */
+/** Play the welcome only right after a sign-in, and never for
+ * automated browsers (the real-browser smoke test would be blocked by the overlay). */
 export function shouldPlayIntro(): boolean {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
   if (typeof navigator !== 'undefined' && navigator.webdriver) return false
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false
   return pending()
 }

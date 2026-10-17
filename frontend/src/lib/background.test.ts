@@ -37,9 +37,9 @@ describe('the 3D background setting', () => {
     expect(backgroundSupported()).toBe(true)
   })
 
-  it('does not run for people who asked for less motion', () => {
+  it('still runs when the browser reports reduced motion', () => {
     stubMotion(true)
-    expect(backgroundSupported()).toBe(false)
+    expect(backgroundSupported()).toBe(true)
   })
 
   it('does not run in automated browsers', () => {
