@@ -14,57 +14,78 @@ optimizer) and a React web interface (`frontend/`).
 
 The design is in [`docs/Backend_Specification.md`](docs/Backend_Specification.md). Hosting on Render and Vercel is covered in [`docs/Deployment.md`](docs/Deployment.md).
 
-## What works (and how it was checked)
 
-| Area | Status |
-| --- | --- |
-| Login, JWT access and rotating refresh tokens, four roles | Built and tested |
-| Reference data (departments, sections), seed script | Built and tested |
-| Block requests: create, edit, submit, cancel, reject, dependencies with cycle detection, optimistic locking, audit log | Built and tested |
-| Planner (OR-Tools CP-SAT), independent-planning baseline, independent checker, metrics | Built and tested |
-| Plan runs in a background thread, status polling, idempotency key | Built and tested |
-| Synthetic timetable generator, traffic profile, CSV/JSON upload, traffic-aware cost | Built and tested |
-| Explanations, conflicts, what-if, override (child plan), approve, publish, published calendar | Built and tested |
-| `scripts/demo.py` end-to-end demo | Run, and covered by a smoke test |
-| End-to-end check through the real HTTP API (`backend/scripts/e2e_check.py`): real server process, real background solver, all roles, the whole workflow and the failure paths | Run: 18/18 checks; also part of the test suite |
-| Machine learning (light): synthetic data, delay and overrun models vs baselines, time-based split, registry, `/ml/models`, `/ml/train`, delay-model cost with fallback | Built and tested (leakage and fallback tests; checked over real HTTP) |
-| Hardening: login lockout and rate limit, `/ready`, JSON request logs with request ids, benchmark script | Built and tested (see [Hardening](#hardening-light) and [Benchmark](#benchmark)) |
-| Solver isolation: each solve runs in a child process, so a native crash fails one run instead of killing the server | Built and tested (crash, exception, hang, cancel) |
-| Web interface (`frontend/`): public homepage (scroll-driven train), login (with a one-click read-only demo), a short train welcome after sign-in, a 3D railway background that can be switched off, dashboard, requests, plans, plan detail with Gantt, calendar | Built; 148 unit and component tests; 22-step real-browser check run in Chrome (zero console errors) |
+## Run it locally (Windows)
 
-**Test counts at the last full run:** backend 601 tests, frontend 148 tests, end-to-end check 18/18
-over real HTTP, browser check 22/22. Everything above was run on **SQLite**. See
-[Limitations](#limitations) for what was not run and [Known issues](#known-issues).
+### What you need
 
-## Setup on Windows (no Docker, no Redis)
+| Tool | Version | Check with |
+| --- | --- | --- |
+| Python | 3.11 or newer | `python --version` |
+| Node.js (with npm) | 20 or newer | `node --version` |
+| Git | any | `git --version` |
+| Google Chrome | only for the optional browser check | |
 
-Open PowerShell and run these one at a time.
+No Docker, Redis or database server is needed: the database is a SQLite file created for you.
+
+### One-time setup
+
+Open PowerShell in the folder where you want the project.
 
 ```powershell
-cd C:\Users\Dell\OneDrive\Documents\GitHub\hack-day\backend
+git clone https://github.com/shaketraj156-ops/hack-day.git
+cd hack-day
+
+# 1. Backend: virtual environment and packages
+cd backend
 python -m venv .venv
 .\.venv\Scripts\python -m pip install -e ".[dev]"
+
+# 2. Settings: copy the example file. The defaults work; for anything beyond a local try-out,
+#    open backend\.env and change JWT_SECRET to your own long random string.
 Copy-Item .env.example .env
+
+# 3. Create the database tables
 .\.venv\Scripts\python -m alembic upgrade head
+
+# 4. Create the demo users (pick any password; you will use it to log in)
 $env:SEED_PASSWORD = "pick-a-password"
 .\.venv\Scripts\python -m scripts.seed_synthetic
 Remove-Item Env:SEED_PASSWORD
-.\.venv\Scripts\python -m uvicorn app.main:app --reload
+
+# 5. Optional: 16 demo requests and simulated traffic, so there is something to plan
+.\.venv\Scripts\python -m scripts.load_demo_data
+
+# 6. Frontend: packages
+cd ..rontend
+npm install
+cd ..
 ```
 
-Open <http://127.0.0.1:8000/docs>. If you pulled new code, run `alembic upgrade head` again to
-add new tables, and `pip install -e ".[dev]"` again to add new packages.
+### Start it
 
-For the web interface, install its packages once (needs Node 20 or newer):
+From the repository root (`hack-day`):
 
 ```powershell
-cd ..\frontend
-npm install
+powershell -ExecutionPolicy Bypass -File .\start.ps1
 ```
 
-After that, `start.ps1` (below) starts everything.
+This applies any pending migrations and opens two windows: the backend and the frontend.
 
-Demo users (all use the password you chose for `SEED_PASSWORD`):
+| What | Address |
+| --- | --- |
+| Web interface | <http://localhost:5173> |
+| API documentation | <http://127.0.0.1:8000/docs> |
+
+Log in as `planner@blockplanner.test` with the password you chose in step 4. To stop, close the two
+windows (or press Ctrl+C in each).
+
+If you prefer to start them by hand: in `backend`, run
+`.\.venv\Scripts\python -m uvicorn app.main:app --reload`; in `frontend`, run `npm run dev`.
+
+### Demo users
+
+All use the password you chose for `SEED_PASSWORD`.
 
 | Email | Role |
 | --- | --- |
@@ -72,6 +93,17 @@ Demo users (all use the password you chose for `SEED_PASSWORD`):
 | `planner@blockplanner.test` | planner |
 | `engg@blockplanner.test`, `trd@blockplanner.test`, `snt@blockplanner.test` | department users |
 | `viewer@blockplanner.test` | viewer (read-only) |
+
+### Common problems
+
+- **`start.ps1` says "Missing backend\.venv" or "Missing backend\.env":** do steps 1 and 2 above.
+- **"running scripts is disabled":** start it with the `powershell -ExecutionPolicy Bypass -File ...` form shown above.
+- **Port 8000 or 5173 is already in use:** `start.ps1` skips a part that is already running. Close the old window, or stop whatever uses the port.
+- **Login fails for every user:** the users were not created, or you used a different password. Run step 4 again.
+- **Login says `too_many_attempts` (HTTP 429):** five wrong passwords lock an email for 15 minutes. Restart the backend to clear it.
+- **The frontend cannot reach the backend:** the backend must be on `http://127.0.0.1:8000`. If it is elsewhere, copy `frontend\.env.example` to `frontend\.env` and set `VITE_API_URL`.
+- **After pulling new code:** run `alembic upgrade head` again (new tables), `pip install -e ".[dev]"` again (new packages) and `npm install` again.
+- **Start over with an empty database:** stop the backend, delete `backendlockplanner.db`, then repeat steps 3 to 5.
 
 ## Web interface
 
@@ -81,8 +113,7 @@ Start everything with one command from the repository root:
 powershell -ExecutionPolicy Bypass -File .\start.ps1
 ```
 
-It applies any pending database migrations, then opens the backend (<http://127.0.0.1:8000/docs>) and
-the frontend (<http://localhost:5173>) in two windows. Log in as `planner@blockplanner.test`.
+`start.ps1` is described under [Run it locally](#run-it-locally-windows). Log in as `planner@blockplanner.test`.
 Details, pages and role rules are in [`frontend/README.md`](frontend/README.md).
 
 To check the interface in a real browser (needs Google Chrome):
