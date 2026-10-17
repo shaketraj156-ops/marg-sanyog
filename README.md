@@ -1,7 +1,5 @@
 # AI-Powered Automatic Block Planning
 
-Smart India Hackathon 2026, Problem Statement 26027.
-
 Railway maintenance needs "blocks": a section of line is closed so engineers can work on it.
 Engineering, Traction Distribution (TrD) and Signal and Telecom (S&T) normally ask for blocks
 separately, so the same section is closed again and again. This system takes their requests,
@@ -14,7 +12,7 @@ optimizer) and a React web interface (`frontend/`).
 > every number below come from invented data and stated assumptions. No real railway data was
 > used and nothing here controls trains, signals or power. The system proposes; a person approves.
 
-The design is in [`docs/Backend_Specification.md`](docs/Backend_Specification.md).
+The design is in [`docs/Backend_Specification.md`](docs/Backend_Specification.md). Hosting on Render and Vercel is covered in [`docs/Deployment.md`](docs/Deployment.md).
 
 ## What works (and how it was checked)
 
@@ -32,10 +30,10 @@ The design is in [`docs/Backend_Specification.md`](docs/Backend_Specification.md
 | Machine learning (light): synthetic data, delay and overrun models vs baselines, time-based split, registry, `/ml/models`, `/ml/train`, delay-model cost with fallback | Built and tested (leakage and fallback tests; checked over real HTTP) |
 | Hardening: login lockout and rate limit, `/ready`, JSON request logs with request ids, benchmark script | Built and tested (see [Hardening](#hardening-light) and [Benchmark](#benchmark)) |
 | Solver isolation: each solve runs in a child process, so a native crash fails one run instead of killing the server | Built and tested (crash, exception, hang, cancel) |
-| Web interface (`frontend/`): login, dashboard, requests, plans, plan detail with Gantt, calendar | Built; 101 unit and component tests; 19-step real-browser check run in Chrome (zero console errors) |
+| Web interface (`frontend/`): public homepage, login (with a one-click read-only demo), dashboard, requests, plans, plan detail with Gantt, calendar | Built; 148 unit and component tests; 22-step real-browser check run in Chrome (zero console errors) |
 
-**Test counts at the last full run:** backend 601 tests, frontend 101 tests, end-to-end check 18/18
-over real HTTP, browser check 19/19. Everything above was run on **SQLite**. See
+**Test counts at the last full run:** backend 601 tests, frontend 148 tests, end-to-end check 18/18
+over real HTTP, browser check 22/22. Everything above was run on **SQLite**. See
 [Limitations](#limitations) for what was not run and [Known issues](#known-issues).
 
 ## Setup on Windows (no Docker, no Redis)

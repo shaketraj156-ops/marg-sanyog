@@ -4,7 +4,7 @@ Guidance for working in this repository.
 
 ## What this is
 
-Backend for an AI-powered railway block planner (Smart India Hackathon 2026, PS 26027). Design:
+Backend for an AI-powered railway block planner . Design:
 `docs/Backend_Specification.md`. User-facing docs: `README.md`. **All data is synthetic.**
 
 ## Hard constraints (decided by the user)
