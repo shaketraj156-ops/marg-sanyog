@@ -1,0 +1,24 @@
+# Render Blueprint for the backend (the frontend goes to Vercel, see docs/Deployment.md).
+# Not run yet: nothing in this repo has been deployed. Check every value before you rely on it.
+services:
+  - type: web
+    name: marg-sanyog-api
+    runtime: python
+    rootDir: backend
+    plan: free # the free plan sleeps when idle and has little CPU and memory; use a paid plan for a real demo
+    buildCommand: pip install .
+    # Create or update the tables, then start ONE worker (the "one solve at a time" rule lives inside the
+    # process). --proxy-headers makes the login rate limit see each visitor's own address, not Render's proxy.
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8 # needs python >= 3.11; change it if Render does not offer this exact version
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false # set in the Render dashboard: postgresql+psycopg://...
+      - key: CORS_ORIGINS
+        sync: false # a JSON list, for example ["https://your-app.vercel.app"]
+      - key: SOLVER_WORKERS
+        value: "2"
